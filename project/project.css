@@ -231,3 +231,7 @@ section.rfCompare { padding-bottom: var(--rf-section-y); }
 /* Všechna tlačítka plně zakulacená */
 html.rf-on :is(a.button, button.button, .button, .uk-button, input[type="submit"], .submitPack, .submitPack input, .footerCta, .button-main, .button-flat, .rfMenuCta a, .cookie-bar-modal button, .cookie-bar-modal .button, .panoramaHero__quickSearchSubmit, .floorBtn, .buildingBtn, .viewToggle__option, .tab, .reoReservation-open, .buyPanel__cta) { border-radius: 999px !important; }
 html.rf-on .rfMobileBar a.is-main { border-radius: 999px; }
+
+/* Půdorys podlaží: celý na první obrazovce */
+html.rf-on section.floorExtract .floorExtract-plan .mapingFloor { max-width: min(100%, calc((100vh - 300px) * var(--rf-plan-ratio, 1.85))); margin-inline: auto; }
+html.rf-on section.floorExtract .floorExtract-plan .mapingFloor img.map { width: 100%; height: auto; }
