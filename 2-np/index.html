@@ -13,8 +13,8 @@
 	var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
 		set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 	var qs = location.search;
-	if (/[?&]puvodni\b/.test(qs)) store.set('brave-refine', 'off');
-	if (/[?&]upravene\b/.test(qs)) store.set('brave-refine', 'on');
+	// Klientský web: vždy upravená verze (přepínač šablony se nezobrazuje, ?puvodni nic nedělá)
+	store.set('brave-refine', 'on');
 	// „Upravená V2“ (/v3/) je v přepínači skrytá — stránka zůstává jen na přímé adrese.
 	// Zpět ji zapne SHOW_V3 = true (přesměrování homepage + tlačítko).
 	var SHOW_V3 = false;
@@ -165,7 +165,7 @@
 			else if (onV3) location.href = B + '/';
 			else location.reload();
 		});
-		document.body.appendChild(s);
+		// klientský web: přepínač verzí šablony se nevkládá
 	});
 })();
 </script> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1"> <meta name="author" content="Byty v zahradách & IMPnet"> <meta name="copyright" content="HICH Holding s.r.o."> <meta name="application-name" content="Byty v zahradách">   <meta name="theme-color" content="#617952"> <meta name="msapplication-TileColor" content="#617952"> <link rel="shortcut icon" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.32x32.exact.ico" > <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.57x57.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="60x60" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.60x60.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.72x72.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.76x76.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.114x114.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.120x120.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.144x144.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.152x152.exact.png" >          <link rel="preload" href="/byty-v-zahradach/www/Development/cache/e310bc7c7c3b626240875905e13200a4.css?modified=1790938914" as="style"> <link rel="stylesheet" href="/byty-v-zahradach/www/Development/cache/e310bc7c7c3b626240875905e13200a4.css?modified=1790938914" type="text/css" media="screen"><link rel="preload" href="/byty-v-zahradach/www/Development/cache/9710ee2e4fc1b09cbf7a1a22a72e21d1.js?modified=1791282034" as="script"> <script type="text/javascript" src="/byty-v-zahradach/www/Development/cache/9710ee2e4fc1b09cbf7a1a22a72e21d1.js?modified=1791282034"></script> <script id="snippet-gtm-">
