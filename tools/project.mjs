@@ -387,9 +387,11 @@ function unitPage(root, x) {
 function floorPage(root, f) {
 	chrome(root, { title: `${f.name} | ${P.name}`, desc: `Byty v ${f.name} domu ${P.name}: ${f.units.length} bytů.`, current: '/nabidka-nemovitosti/' });
 	const title = `<section class="projectListTitle"><div class="container"><div class="text"><p class="subtitle">${f.units.length} ${pl(f.units.length, 'byt', 'byty', 'bytů')} v podlaží</p><h1>${f.name}</h1></div></div></section>`;
-	const tpl = f.units.map(x => `<template data-imagemap-polygon="${x.no}" data-imagemap-coordinates="${JSON.stringify(x.poly).replace(/"/g, '&quot;')}" data-imagemap-state="available" data-imagemap-href="${unitUrl(x)}" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt ${x.code}</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">${x.dispo}, ${m2(x.area)}</span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div>${outdoor(x).length ? `<div class="row"><span class="label">Venku</span><span class="value">${outdoor(x).join(', ')}</span></div>` : ''}</div></div></template>`).join(' ');
+	const tpl = f.units.map(x => `<template data-imagemap-polygon="${f.n}" data-imagemap-coordinates="${JSON.stringify(x.poly).replace(/"/g, '&quot;')}" data-imagemap-state="available" data-imagemap-href="${unitUrl(x)}" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt ${x.code}</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">${x.dispo}, ${m2(x.area)}</span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div>${outdoor(x).length ? `<div class="row"><span class="label">Venku</span><span class="value">${outdoor(x).join(', ')}</span></div>` : ''}</div></div></template>`).join(' ');
 	const fe = root.querySelector('section.floorExtract');
 	const map = fe.querySelector('.mapingFloor');
+	const [cx1, cy1, cx2, cy2] = D.FLOOR_CROP[f.n];
+	map.setAttribute('style', `--rf-plan-ratio: ${((cx2 - cx1) / (cy2 - cy1)).toFixed(3)}`);
 	const cursor = fe.querySelector('#viz-cursor')?.outerHTML || '';
 	map.set_content(`<img src="${floorPlan(f.n)}" alt="Půdorys ${f.name}" class="map" data-imagemap-id="${f.n}"> ${tpl}`);
 	fe.querySelector('.floorExtract-buildings')?.remove();
@@ -482,6 +484,8 @@ async function recolor() {
 		[/#30aa51/gi, C.green], [/48 170 81/g, '97 121 82'], [/#288a42/gi, C.greenDark], [/40 138 66/g, '77 97 65']];
 	const files = [...(await fs.readdir(path.join(OUT, 'www', 'Development', 'cache'))).filter(f => f.endsWith('.css')).map(f => path.join(OUT, 'www', 'Development', 'cache', f)), path.join(OUT, 'refine', 'brave-refine.css')];
 	for (const f of files) { let s = await fs.readFile(f, 'utf8'); for (const [re, v] of map) s = s.replace(re, v); await fs.writeFile(f, s); }
+	// barva zvýraznění bytů v klikacím půdorysu (canvas, nastavená v JS šablony)
+	for (const f of (await fs.readdir(path.join(OUT, 'www', 'Development', 'cache'))).filter(f => f.endsWith('.js'))) { const p = path.join(OUT, 'www', 'Development', 'cache', f); const s = await fs.readFile(p, 'utf8'); await fs.writeFile(p, s.replace("available:'66,199,135'", "available:'97,121,82'")); }
 	for (const f of ['mailContact.svg', 'mobileContact.svg', 'send.svg']) { const p = path.join(OUT, 'www', 'Development', 'images', 'svg', f); let s = await fs.readFile(p, 'utf8').catch(() => null); if (s) await fs.writeFile(p, s.replace(/#42c787/gi, C.green)); }
 }
 
