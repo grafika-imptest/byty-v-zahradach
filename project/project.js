@@ -71,4 +71,44 @@
 		});
 		apply();
 	})();
+/* Oblíbené a porovnání — ve statickém náhledu uložené v prohlížeči (localStorage) */
+	(function () {
+		var K = { fav: 'bvz-fav', cmp: 'bvz-cmp' }, MAX_CMP = 4;
+		function get(k) { try { return JSON.parse(localStorage.getItem(K[k]) || '[]'); } catch (e) { return []; } }
+		function set(k, v) { try { localStorage.setItem(K[k], JSON.stringify(v)); } catch (e) {} }
+		var dataEl = document.getElementById('rf-units'), UNITS = dataEl ? JSON.parse(dataEl.textContent) : [];
+		function toast(t) {
+			var el = document.querySelector('.rfToast') || document.body.appendChild(Object.assign(document.createElement('div'), { className: 'rfToast', role: 'status' }));
+			el.textContent = t; el.classList.add('is-in'); clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove('is-in'); }, 2400);
+		}
+		function sync() {
+			var fav = get('fav'), cmp = get('cmp');
+			$$('.menuLink.favorite .number').forEach(function (n) { n.textContent = fav.length; });
+			$$('.menuLink.comparison .number').forEach(function (n) { n.textContent = cmp.length; });
+			$$('[data-rf-fav]').forEach(function (b) { var on = fav.indexOf(b.dataset.rfFav) > -1; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', String(on)); var sp = b.querySelector('span'); if (sp) sp.textContent = on ? 'V oblíbených' : 'Přidat k oblíbeným'; });
+			$$('[data-rf-cmp]').forEach(function (b) { var on = cmp.indexOf(b.dataset.rfCmp) > -1; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', String(on)); var sp = b.querySelector('span'); if (sp) sp.textContent = on ? 'V porovnání' : 'Přidat do porovnání'; });
+			var grid = $('[data-rf-saved="fav"]');
+			if (grid) { $$(':scope > div', grid).forEach(function (c) { c.hidden = fav.indexOf(c.dataset.no) < 0; }); var e = $('.rfSavedEmpty'); if (e) e.hidden = fav.length > 0; if (window.UIkit) try { UIkit.update(grid); } catch (x) {} }
+			var cw = $('[data-rf-compare]');
+			if (cw) {
+				var list = cmp.map(function (no) { return UNITS.filter(function (u) { return u.no === no; })[0]; }).filter(Boolean);
+				var e2 = $('.rfSavedEmpty'); if (e2) e2.hidden = list.length > 0;
+				var m2 = function (v) { return v ? String(v).replace('.', ',') + ' m²' : '—'; };
+				var rows = [['Dispozice', function (u) { return u.dispo; }], ['Podlaží', function (u) { return u.floor + '. NP'; }], ['Plocha bytu', function (u) { return m2(u.area); }], ['Balkon', function (u) { return m2(u.balcony); }], ['Terasa', function (u) { return m2(u.terrace); }], ['Zahrada', function (u) { return m2(u.garden); }], ['Cena', function () { return 'na vyžádání'; }]];
+				cw.innerHTML = list.length ? '<table class="rfCompare__table"><thead><tr><th></th>' + list.map(function (u) { return '<th scope="col"><a href="' + u.url + '"><img src="' + u.plan + '" alt="Půdorys bytu ' + u.code + '"><span>Byt ' + u.code + '</span></a><button type="button" class="rfCompare__rm" data-rf-cmp="' + u.no + '" aria-label="Odebrat byt ' + u.code + ' z porovnání">Odebrat</button></th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr><th scope="row">' + r[0] + '</th>' + list.map(function (u) { return '<td>' + r[1](u) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>' : '';
+			}
+		}
+		document.addEventListener('click', function (e) {
+			var b = e.target.closest('[data-rf-fav], [data-rf-cmp]');
+			if (!b) return;
+			e.preventDefault();
+			var k = b.hasAttribute('data-rf-fav') ? 'fav' : 'cmp', no = b.dataset.rfFav || b.dataset.rfCmp, v = get(k), i = v.indexOf(no);
+			if (i > -1) { v.splice(i, 1); toast(k === 'fav' ? 'Odebráno z oblíbených' : 'Odebráno z porovnání'); }
+			else if (k === 'cmp' && v.length >= MAX_CMP) { toast('Porovnat lze nejvýše ' + MAX_CMP + ' byty'); return; }
+			else { v.push(no); toast(k === 'fav' ? 'Přidáno k oblíbeným' : 'Přidáno do porovnání'); }
+			set(k, v); sync();
+		});
+		window.addEventListener('storage', sync);
+		sync();
+	})();
 })();

@@ -199,3 +199,35 @@ html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copy h1 { font-size: 
 	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copyInner { width: auto !important; max-width: 60rem !important; }
 	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copy h1 { white-space: nowrap; max-width: none !important; width: auto !important; }
 }
+
+/* --- Oblíbené a porovnání --------------------------------------------------- */
+.flatCard .title .icon { display: flex; gap: 6px; }
+.flatCard .title .icon button, .unitSave { cursor: pointer; }
+.flatCard .title .icon button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--rf-line-strong); border-radius: 50%; background: #fff; }
+.flatCard .title .icon button img, .flatCard .title .icon button svg { width: 18px; height: 18px; }
+[data-rf-fav].is-active, [data-rf-cmp].is-active { background: var(--rf-green) !important; border-color: var(--rf-green) !important; color: #fff !important; }
+[data-rf-fav].is-active svg *, [data-rf-cmp].is-active svg * { stroke: #fff; }
+.unitSave.is-active { background: transparent !important; color: var(--rf-green-ink) !important; font-weight: 700; }
+.unitSave.is-active svg * { stroke: var(--rf-green-ink); }
+.rfToast { position: fixed; left: 50%; bottom: 96px; z-index: 100000; transform: translate(-50%, 12px); opacity: 0; padding: 12px 18px; border-radius: 999px; background: var(--bvz-anthracite); color: #fff; font: 600 1.4rem/1.3 Urbanist, sans-serif; transition: .25s; pointer-events: none; }
+.rfToast.is-in { opacity: 1; transform: translate(-50%, 0); }
+.rfSavedEmpty { padding: 24px 0 48px; font-size: 1.6rem; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.rfSaved { padding-bottom: var(--rf-section-y); }
+section.rfCompare { padding-bottom: var(--rf-section-y); }
+.rfCompare__wrap { overflow-x: auto; }
+.rfCompare__table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 1.5rem; }
+.rfCompare__table th, .rfCompare__table td { padding: 12px 14px; border-bottom: 1px solid var(--rf-line); text-align: left; vertical-align: top; }
+.rfCompare__table thead th { vertical-align: bottom; }
+.rfCompare__table thead img { display: block; width: 100%; max-width: 240px; aspect-ratio: 4 / 3; object-fit: contain; background: #fff; border: 1px solid var(--rf-line); border-radius: var(--rf-radius); margin-bottom: 10px; }
+.rfCompare__table thead a { color: var(--bvz-anthracite); text-decoration: none; font: 400 2rem/1.2 Fraunces, serif; }
+.rfCompare__table tbody th { color: #666; font-weight: 600; white-space: nowrap; }
+.rfCompare__rm { display: block; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--rf-green-ink); text-decoration: underline; cursor: pointer; font: 500 1.3rem Urbanist, sans-serif; }
+/* Vyhledávání: stejný odstup od okraje úvodu vlevo, vpravo i dole */
+@media (min-width: 640px) {
+	html.rf-on section.panoramaHero.rfVideoHero { --bvz-search-inset: clamp(16px, 2.2vw, 36px); }
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__quickSearch { left: var(--bvz-search-inset) !important; right: var(--bvz-search-inset) !important; bottom: var(--bvz-search-inset) !important; top: auto !important; }
+}
+
+/* Všechna tlačítka plně zakulacená */
+html.rf-on :is(a.button, button.button, .button, .uk-button, input[type="submit"], .submitPack, .submitPack input, .footerCta, .button-main, .button-flat, .rfMenuCta a, .cookie-bar-modal button, .cookie-bar-modal .button, .panoramaHero__quickSearchSubmit, .floorBtn, .buildingBtn, .viewToggle__option, .tab, .reoReservation-open, .buyPanel__cta) { border-radius: 999px !important; }
+html.rf-on .rfMobileBar a.is-main { border-radius: 999px; }
