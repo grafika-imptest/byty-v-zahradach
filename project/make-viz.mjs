@@ -24,7 +24,9 @@ for (let i = 1; i <= 5; i++) {
 	ff(inp, `${pre}scale=1440:-2`, path.join(OUT, `viz-${i}-1440.jpg`), false);
 	if (i === 5) {
 		// interaktivní dům: zahradní pohled ořezaný na 2:1 (pásy podlaží v tools/project.mjs jsou odečtené z PDF verze — u nového JPEGu je zkontrolovat)
-		ff(inp, `${pre}crop=iw:iw/2:0:(ih-iw/2)*0.571,scale=1600:800`, path.join(OUT, 'house-1600x800.webp'));
+		// rozšířený JPEG (7645×4303): výřez přiblížený na dům; jinak PDF render
+			const vf = jpg ? 'scale=1600:-2,crop=1240:620:280:110,scale=1600:800' : `${pre}crop=iw:iw/2:0:(ih-iw/2)*0.571,scale=1600:800`;
+			ff(inp, vf, path.join(OUT, 'house-1600x800.webp'));
 	}
 }
 console.log('vizualizace:', used);

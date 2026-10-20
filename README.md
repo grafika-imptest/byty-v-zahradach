@@ -52,4 +52,4 @@ fotografie hrubé stavby 8–9/2026, katalog 10/2025. Místa v okolí: OpenStree
 
 - Logo a brand projektu nejsou součástí zakázky — v návrhu je jen textové označení „Byty v zahradách“.
 - Úvod: video 13,7 s z Magnificu (Kling 2.5) — 2 záběry z upravených JPEGů 3 a 4, interiér 2+kk podle textového popisu (ilustrační, ne podle konkrétního bytu); `project/media/`, při výměně zvýšit `MEDIA_V` v tools/project.mjs.
-- Výběr pater (interaktivní dům): zatím zahradní pohled z PDF vizualizace 5 se siluetou a pásy podlaží. ODLOŽENO: přejít na rozšířený „355_BD_V_Zahradach_vizualizace_1 kopie.jpg“ (3914×2271, uliční pohled, celý dům bez ořezu) a znovu zakreslit obrys a pásy podlaží. Pozor: make-viz.mjs tento JPEG při dalším spuštění vezme i pro viz-1.
+- Výběr pater (interaktivní dům): rozšířený JPEG vizualizace 5 (výřez v project/make-viz.mjs), silueta a pásy podlaží v tools/project.mjs (FLOOR_LINES, HOUSE_OUTLINE).

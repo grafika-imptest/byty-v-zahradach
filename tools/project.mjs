@@ -56,27 +56,32 @@ const SYMBOL_PATH = fss.readFileSync(path.join(ROOT, 'project', 'img', 'logo', '
 
 function card(x, { compact = false } = {}) {
 	const poly = JSON.stringify(x.poly).replace(/"/g, '&quot;');
-	return `<div data-dispo="${x.dispo}" data-floor="${x.floor}" data-area="${x.area}" data-out="${[x.balcony && 'balkon', x.terrace && 'terasa', x.garden && 'zahrada'].filter(Boolean).join(' ')}">
+	return `<div data-no="${x.no}" data-dispo="${x.dispo}" data-floor="${x.floor}" data-area="${x.area}" data-out="${[x.balcony && 'balkon', x.terrace && 'terasa', x.garden && 'zahrada'].filter(Boolean).join(' ')}">
 <div class="flatCard rfFlatCard" data-unit-floor-plan="${floorPlan(x.floor)}" data-unit-floor-polygon="${poly}" data-unit-floor-id="${x.floor}" data-unit-floor-name="${x.floor}. NP" data-unit-floor-state="available">
 <div class="top"><label>Volný</label>${x.garden ? '<label class="rfTag">Se zahradou</label>' : x.terrace >= 9 ? '<label class="rfTag">Velká terasa</label>' : ''}</div>
 <a href="${unitUrl(x)}" class="picture rfPlanPic"><picture><img loading="lazy" src="${plan(x.no)}" alt="Půdorys bytu ${x.code}" width="800" height="600"></picture></a>
-<div class="title"><h3>Byt ${x.code}</h3><p><span>${x.floor}. NP</span><span>${x.dispo}</span><span>${num(x.area)} m<sup>2</sup></span>${outdoorShort(x) ? `<span>${outdoorShort(x)}</span>` : ''}</p></div>
+<div class="title"><h3>Byt ${x.code}</h3><p><span>${x.floor}. NP</span><span>${x.dispo}</span><span>${num(x.area)} m<sup>2</sup></span>${outdoorShort(x) ? `<span>${outdoorShort(x)}</span>` : ''}</p>${saveIcons(x)}</div>
 <div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="${unitUrl(x)}" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
 </div></div>`;
 }
 
+// Oblíbené a porovnání (ve statickém náhledu v prohlížeči — localStorage, project.js)
+const ICON_SVG = n => u(`/www/Development/images/svg/${n}.svg`);
+const saveIcons = x => `<div class="icon"><button type="button" class="favourite" data-rf-fav="${x.no}" aria-pressed="false" aria-label="Přidat byt ${x.code} k oblíbeným" data-uk-tooltip="title: Přidat k oblíbeným; pos: top"><img loading="lazy" src="${ICON_SVG('favourite2')}" alt="" data-uk-svg></button><button type="button" class="comparator" data-rf-cmp="${x.no}" aria-pressed="false" aria-label="Přidat byt ${x.code} do porovnání" data-uk-tooltip="title: Přidat do porovnání; pos: top"><img loading="lazy" src="${ICON_SVG('comparator')}" alt="" data-uk-svg></button></div>`;
+const UNITS_JSON = () => `<script type="application/json" id="rf-units">${JSON.stringify(U.map(x => ({ no: x.no, code: x.code, dispo: x.dispo, floor: x.floor, area: x.area, balcony: x.balcony, terrace: x.terrace, garden: x.garden, url: unitUrl(x), plan: plan(x.no) })))}</script>`;
+
 // Interaktivní vizualizace domu (zahradní strana) — pásy podlaží
-// Body odečtené z obrázku house-1600x800 (zahradní pohled, vizualizace 5). Rozhraní podlaží
-// na fasádě (x levého křídla, středního křídla, rohu a pravé strany) + silueta střechy.
+// Body odečtené z obrázku house-1600x800 (rozšířený zahradní pohled „vizualizace_5 kopie.jpg“,
+// výřez v project/make-viz.mjs). Rozhraní podlaží na fasádě: levé křídlo, střední křídlo, roh, pravá strana.
 const FLOOR_LINES = [
-	[[452, 605], [725, 612], [1300, 655], [1495, 615]],
-	[[452, 510], [725, 525], [1300, 485], [1495, 485]],
-	[[452, 425], [725, 395], [1300, 345], [1495, 370]],
-	[[452, 350], [725, 270], [1300, 195], [1495, 250]],
-	[[452, 350], [472, 350], [472, 290], [722, 205], [733, 142], [1300, 0], [1455, 95], [1495, 250]],
+	[[400, 612], [640, 615], [1060, 640], [1220, 615]],
+	[[400, 558], [640, 548], [1060, 522], [1220, 515]],
+	[[400, 502], [640, 455], [1060, 402], [1220, 410]],
+	[[400, 442], [640, 365], [1060, 288], [1220, 330]],
+	[[400, 358], [608, 300], [618, 250], [1050, 78], [1192, 232], [1192, 300], [1220, 330]],
 ];
 // Silueta celého domu (pulzující obrys) — střecha, pravý roh, terén, balkony levého křídla
-const HOUSE_OUTLINE = [...FLOOR_LINES[4], [1495, 615], [1300, 655], [725, 612], [452, 605], [452, 550], [420, 550], [420, 420], [452, 420]];
+const HOUSE_OUTLINE = [...FLOOR_LINES[4], [1220, 615], [1060, 640], [640, 615], [400, 612], [400, 580], [372, 580], [372, 470], [400, 470]];
 function vizSection({ compact = true, title = true } = {}) {
 	const areas = D.floors.map(f => {
 		const lo = FLOOR_LINES[f.n - 1], hi = FLOOR_LINES[f.n];
@@ -128,7 +133,8 @@ function chrome(root, { title, desc = DESC, current }) {
 	head.insertAdjacentHTML('beforeend', `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'ApartmentComplex', name: P.name, description: DESC, numberOfAccommodationUnits: P.units, address: { '@type': 'PostalAddress', streetAddress: P.street, postalCode: P.zip, addressLocality: 'Praha – Řepy', addressCountry: 'CZ' }, geo: { '@type': 'GeoCoordinates', latitude: P.geo.lat, longitude: P.geo.lng } })}</script>`);
 
 	root.querySelectorAll('a.logo').forEach(a => { a.setAttribute('title', P.name); a.set_content(logo(!!a.closest('section.footerMain'))); });
-	root.querySelectorAll('.menuTop .favorite, .menuTop .comparison, .menuTop .languageSwitcher, .uk-offcanvas-bar .top').forEach(n => n.remove());
+	root.querySelectorAll('.menuTop .languageSwitcher, .uk-offcanvas-bar .top .languageSwitcher').forEach(n => n.remove());
+	root.querySelectorAll('.menuLink.favorite .number, .menuLink.comparison .number').forEach(n => n.set_content('0'));
 	const li = ([href, t]) => `<li${current === href ? ' class="uk-active"' : ''}><a href="${u(href)}"><span>${t}</span></a></li>`;
 	const navMain = root.querySelector('section.topBar .uk-navbar-nav');
 	if (navMain) navMain.set_content(NAV.map(li).join(''));
@@ -328,6 +334,8 @@ function unitPage(root, x) {
 	bp.querySelector('.buyPanel__monthly')?.remove();
 	bp.querySelector('.buyPanel__addons').set_content(`<li><span class="buyPanel__addonName">Parkovací stání v garáži</span><span class="buyPanel__addonPrice">za příplatek</span></li>`);
 	bp.querySelector('.buyPanel__addonNote').set_content(P.parking.note);
+	const saves = root.querySelector('.unitSaves');
+	if (saves) saves.set_content(`<button type="button" class="unitSave favourite" data-rf-fav="${x.no}" aria-pressed="false"><img loading="lazy" src="${ICON_SVG('favourite2')}" alt="" data-uk-svg><span>Přidat k oblíbeným</span></button><button type="button" class="unitSave comparator" data-rf-cmp="${x.no}" aria-pressed="false"><img loading="lazy" src="${ICON_SVG('comparator')}" alt="" data-uk-svg><span>Přidat do porovnání</span></button>`);
 	// karty bytu v modálních oknech (hlídač, rezervace)
 	top.querySelectorAll('.flatCard').forEach(fc => {
 		fc.querySelector('.picture')?.set_content(`<picture><img loading="lazy" src="${plan(x.no)}" alt="Půdorys bytu ${x.code}"></picture>`);
@@ -409,6 +417,19 @@ function listing(root) {
 	setMain(root, title + Lhtml + benefitsSection());
 }
 
+function savedPage(root, kind) {
+	const fav = kind === 'fav';
+	chrome(root, { title: `${fav ? 'Oblíbené byty' : 'Porovnání bytů'} | ${P.name}` });
+	const top = root.querySelector('section.favouriteTop');
+	top.querySelector('h1').set_content(fav ? 'Moje oblíbené byty' : 'Porovnání bytů');
+	top.querySelector('.editableBlock').set_content(fav ? '<p>Byty, které jste si označili srdíčkem. Uloží se ve vašem prohlížeči — pošlete nám dotaz a pomůžeme vám vybrat.</p>' : '<p>Postavte si vybrané byty vedle sebe a porovnejte dispozice a plochy. Výběr se uloží ve vašem prohlížeči.</p>');
+	const empty = `<p class="rfSavedEmpty" hidden>${fav ? 'Zatím nemáte žádné oblíbené byty.' : 'Nejsou vybrané žádné byty k porovnání.'} <a class="button second" href="${u('/nabidka-nemovitosti/')}">Přejít na výběr bytů<i class="mdi mdi-chevron-right"></i></a></p>`;
+	const body = fav
+		? `<section class="unitsTableSection rfSaved"><div class="container">${empty}<div class="unitsGrid uk-grid-small uk-child-width-1-2@s uk-child-width-1-3@m uk-child-width-1-4@l" data-uk-grid data-rf-saved="fav">${U.map(x => card(x)).join('')}</div></div></section>`
+		: `<section class="rfCompare"><div class="container">${empty}<div class="rfCompare__wrap" data-rf-compare></div></div></section>`;
+	setMain(root, top.outerHTML + body + UNITS_JSON() + vizSection({ compact: false }) + benefitsSection());
+}
+
 function gdpr(root) {
 	chrome(root, { title: `Ochrana osobních údajů | ${P.name}` });
 	// Právní text dodá developer — v návrhu jen ověřené údaje správce (Fillout)
@@ -471,7 +492,7 @@ async function run() {
 		home: await read('index.html'), projekt: await read('o-projektu/index.html'), standardy: await read('standardy/index.html'),
 		lokalita: await read('lokalita/index.html'), aktuality: await read('aktuality/index.html'), clanek: await fs.readFile(path.join(OUT, 'aktuality/hruba-stavba-je-dokoncena/index.html'), 'utf8'),
 		kontakty: await read('kontakty/index.html'), byt: await fs.readFile(path.join(OUT, 'byt-a-01-01/index.html'), 'utf8'), patro: await fs.readFile(path.join(OUT, 'dum-a-1-np/index.html'), 'utf8'),
-		listing: await read('nabidka-nemovitosti/index.html'), gdpr: await read('zpracovani-osobnich-udaju/index.html'),
+		listing: await read('nabidka-nemovitosti/index.html'), fav: await read('oblibene-nemovitosti/index.html'), cmp: await read('porovnani-jednotek/index.html'), gdpr: await read('zpracovani-osobnich-udaju/index.html'),
 	};
 	const KEEP = new Set(['index.html', '404.html', '.nojekyll', 'www', 'refine', '_data', 'o-projektu', 'standardy', 'lokalita', 'kontakty', 'zpracovani-osobnich-udaju']);
 	for (const e of await fs.readdir(OUT)) if (!KEEP.has(e)) await fs.rm(path.join(OUT, e), { recursive: true, force: true });
@@ -491,6 +512,8 @@ async function run() {
 	for (const x of U) { const r = parse(T.byt, { comment: true }); unitPage(r, x); await write(`${x.slug}/index.html`, r); }
 	for (const f of D.floors) { const r = parse(T.patro, { comment: true }); floorPage(r, f); await write(`${f.n}-np/index.html`, r); }
 	gdpr(T.gdpr); await write('zpracovani-osobnich-udaju/index.html', T.gdpr);
+	savedPage(T.fav, 'fav'); await write('oblibene-nemovitosti/index.html', T.fav);
+	savedPage(T.cmp, 'cmp'); await write('porovnani-jednotek/index.html', T.cmp);
 	await assets();
 	await recolor();
 	console.log(`projekt: ${P.name} · ${U.length} bytů, ${D.floors.length} podlaží, ${D.news.length} aktuality`);
