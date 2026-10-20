@@ -82,7 +82,7 @@ const FLOOR_LINES = [
 ];
 // Silueta celého domu (pulzující obrys) — střecha, pravý roh, terén, balkony levého křídla
 const HOUSE_OUTLINE = [...FLOOR_LINES[4], [1220, 615], [1060, 640], [640, 615], [400, 612], [400, 580], [372, 580], [372, 470], [400, 470]];
-function vizSection({ compact = true, title = true } = {}) {
+function vizSection({ compact = true, title = true, banner = null } = {}) {
 	const areas = D.floors.map(f => {
 		const lo = FLOOR_LINES[f.n - 1], hi = FLOOR_LINES[f.n];
 		const pts = [...lo, ...hi.slice().reverse()].flat().join(',');
@@ -92,9 +92,9 @@ function vizSection({ compact = true, title = true } = {}) {
 		const by = ['1+kk', '2+kk', '3+kk'].map(d => [d, f.units.filter(x => x.dispo === d).length]).filter(([, n]) => n);
 		return `<div id="o${i}" class="odiv homehover" style="display:none;"><div class="homehover-content"><h2>${f.name}</h2>${by.map(([d, n]) => `<div class="availab"><span class="type">${d}</span><span class="avail"><b>${n}</b> ${pl(n, 'volný', 'volné', 'volných')} z ${n}</span></div>`).join('')}</div></div>`;
 	}).join(' ');
-	return `<section class="vizualize${compact ? ' vizualize--compactTop' : ''}"><div class="container">${title ? `<div class="top"><p class="subtitle">Interaktivní vizualizace</p><h2>Vyberte si byt <span>přímo v domě</span></h2></div>` : ''}
-<div class="maping"><img loading="lazy" src="${IMG('house-1600x800.webp')}" alt="Byty v zahradách – zahradní strana domu" class="map" usemap="#image-map" width="1600" height="800"><map name="image-map">${areas}</map>${tips}<svg class="rfHouseOutline" viewBox="0 0 1600 800" preserveAspectRatio="none" aria-hidden="true"><polygon points="${HOUSE_OUTLINE.map(p => p.join(',')).join(' ')}"/></svg></div>
-<p class="link"><a href="${u('/nabidka-nemovitosti/')}" class="button">Zobrazit všechny byty<i class="mdi mdi-chevron-right"></i></a></p></div></section>`;
+	return `<section class="vizualize${compact ? ' vizualize--compactTop' : ''}${banner ? ' rfVizBanner' : ''}"><div class="container">${title ? `<div class="top"><p class="subtitle">Interaktivní vizualizace</p><h2>Vyberte si byt <span>přímo v domě</span></h2></div>` : ''}
+<div class="maping"><img loading="lazy" src="${IMG('house-1600x800.webp')}" alt="Byty v zahradách – zahradní strana domu" class="map" usemap="#image-map" width="1600" height="800"><map name="image-map">${areas}</map>${tips}<svg class="rfHouseOutline" viewBox="0 0 1600 800" preserveAspectRatio="none" aria-hidden="true"><polygon points="${HOUSE_OUTLINE.map(p => p.join(',')).join(' ')}"/></svg>${banner ? `<div class="rfVizOverlay">${banner}</div>` : ''}</div>
+${banner ? '' : `<p class="link"><a href="${u('/nabidka-nemovitosti/')}" class="button">Zobrazit všechny byty<i class="mdi mdi-chevron-right"></i></a></p>`}</div></section>`;
 }
 
 const BENEFITS = [
@@ -412,11 +412,12 @@ function listing(root) {
 	const L = root.querySelector('section.unitsLayout');
 	L.querySelector('.filterModal')?.remove();
 	L.querySelector('.layoutSide').set_content(`<div class="rfFilter" data-rf-filter aria-label="Filtr bytů"></div><div class="rfFloorLinks"><p class="rfFilter__label">Podlaží</p>${D.floors.map(f => `<a href="${floorUrl(f.n)}"><span>${f.name}</span><small>${f.units.length} ${pl(f.units.length, 'byt', 'byty', 'bytů')}</small><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a>`).join('')}</div><div class="floorPreview" data-floor-preview></div>`);
-	L.querySelector('.layoutViz').set_content(vizSection({ compact: true, title: false }));
+	L.querySelector('.layoutViz')?.remove();
+	const bannerHtml = vizSection({ compact: true, title: false, banner: `<p class="subtitle">${P.units} bytů 1+kk až 3+kk · ceny na vyžádání</p><h1>Výběr bytů</h1><p class="rfVizOverlay__hint">Najeďte na podlaží v domě nebo vyberte byt níže</p>` });
 	const main = L.querySelector('.layoutMain');
 	main.set_content(`<section class="unitsTableSection"><div><div class="resultBar"><div class="resultBar__summary"><p class="resultBar__count"><strong data-rf-count>${U.length}</strong> <span data-rf-count-word>bytů</span></p></div></div><div class="unitsGrid uk-grid-small uk-child-width-1-3@l uk-child-width-1-2@s" data-uk-grid data-rf-units>${U.map(x => card(x)).join('')}</div><p class="rfEmpty" hidden>Vybraným filtrům neodpovídá žádný byt. <button type="button" class="button second" data-rf-reset>Zrušit filtry</button></p></div></section>`);
 	const Lhtml = L.outerHTML;
-	setMain(root, title + Lhtml + benefitsSection());
+	setMain(root, bannerHtml + Lhtml + benefitsSection());
 }
 
 function savedPage(root, kind) {
