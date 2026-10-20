@@ -235,3 +235,7 @@ html.rf-on .rfMobileBar a.is-main { border-radius: 999px; }
 /* Půdorys podlaží: celý na první obrazovce */
 html.rf-on section.floorExtract .floorExtract-plan .mapingFloor { max-width: min(100%, calc((100vh - 300px) * var(--rf-plan-ratio, 1.85))); margin-inline: auto; }
 html.rf-on section.floorExtract .floorExtract-plan .mapingFloor img.map { width: 100%; height: auto; }
+
+/* Karta kontaktu ve formuláři detailu bytu: logo nad kontaktem, ne přes něj */
+html.rf-on section.brokerOffer .colleagueBox .companyLogo { position: static !important; width: auto !important; aspect-ratio: auto !important; overflow: visible !important; margin: 0 0 18px !important; }
+html.rf-on section.brokerOffer .colleagueBox .companyLogo .bvzLogoImg { width: auto !important; height: 40px !important; object-fit: contain; }
