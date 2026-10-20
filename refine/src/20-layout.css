@@ -1,0 +1,183 @@
+/* =====================================================================
+   20 · Layout — jeden obsahový shell pro celý web
+   Originál: .container 1864px / 97 % a pod tím každá sekce vlastní strop
+   (1200px, 122rem, 125.3rem, 128rem, 137.6rem, 95 %, 97 %…). Na 1920 tak
+   měl obsah 1200–1376px, na 1440 jen 1025–1200px, a levé hrany sekcí
+   pod sebou skákaly. Teď:
+     · všechny sekce sdílí shell: max --rf-max (1680px) + okraje --rf-gutter,
+     · vnitřní stropy sekcí zrušené — šířku určuje shell,
+     · úzké zůstávají jen čtecí bloky textu (míra řádku), ne celé sekce.
+   ===================================================================== */
+
+.container {
+	width: 100%;
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	margin-inline: auto;
+	box-sizing: border-box;
+}
+
+@media only screen and (max-width: 1900px) {
+	.container {
+		max-width: var(--rf-shell);
+	}
+}
+
+/* Vnořený kontejner (sekce uvnitř sekce) nesmí okraj přičíst podruhé */
+.container .container {
+	max-width: none;
+	padding-inline: 0;
+}
+
+/* --- Vnitřní stropy sekcí → šířka shellu ------------------------------ */
+section.homepageGallery .container .content,
+section.quickFilter .container,
+section.dispositionShowcase .container,
+section.benefits .container .content,
+section.newsList .container .content,
+section.virtualTour .container .top,
+section.virtualTour .container .tourMedia,
+section.contentSubPage .container .content,
+section.subpageExtract .container .content,
+section.favouriteTop .container .content,
+section.favoriteList .container .content,
+section.projectListTitle .container .text,
+section.filterPanel .container .content,
+section.extractFlat .container .content,
+section.floorExtract .container .content,
+section.purchaseSteps .container,
+section.unitDetail .container .content,
+section.calculator .container .content,
+section.investmentCalculator .container .content,
+section.unitSlider .container .content,
+section.unitReasons .container,
+section.faqPack .container .faqFilter,
+section.faqPack .container .content,
+.frontend-reobroker section.pageTop.makler .content .container-entitySlider,
+.unitsTableSection .unitsTable,
+.unitsTableSection .loadMore,
+.unitsTableSection .unitsGrid,
+.filterPanel .filterRow {
+	max-width: none;
+}
+
+section.purchaseSteps .container,
+section.unitReasons .container {
+	width: 100%;
+}
+
+@media only screen and (max-width: 1199px) {
+	section.contentSubPage .container .content,
+	section.subpageExtract .container .content,
+	section.favoriteList .container .content,
+	section.filterPanel .container .content,
+	section.extractFlat .container .content,
+	section.unitSlider .container .content,
+	.frontend-reobroker section.pageTop.makler .content .container-entitySlider {
+		max-width: none;
+	}
+}
+
+/* Hero podstránek „plain/investment“ měly 97 % / 128rem */
+section.pageTopPanel.pageTopPanel--investment .container,
+section.pageTopPanel.pageTopPanel--plain .container,
+section.blogDetail .container,
+body.frontend-reounit section.pageTopPanel > .container {
+	width: 100%;
+	max-width: var(--rf-shell);
+}
+
+@media only screen and (max-width: 1199px) {
+	section.blogDetail .container {
+		max-width: var(--rf-shell);
+	}
+}
+
+@media only screen and (max-width: 959px) {
+	section.pageTopPanel.pageTopPanel--investment .container,
+	section.pageTopPanel.pageTopPanel--plain .container {
+		padding-inline: var(--rf-gutter);
+	}
+}
+
+/* Plnošířkové sekce s barevným pozadím: pozadí přes celou šířku,
+   obsah v shellu */
+section.newsExtract .container .content,
+section.footerPanel .container .content {
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	box-sizing: border-box;
+	margin-inline: auto;
+}
+
+section.filterPanel .container {
+	padding-inline: 0;
+}
+
+section.filterPanel .container .content {
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	box-sizing: border-box;
+}
+
+/* Vizualizace domu: fotka přes celou šířku, ale ne větší než obsah —
+   zdroj má 1600px, na 1920 se dřív roztahoval na 120 % a byl měkký.
+   Přepočet image mapy (rescaleImageMapAreas + maphilight) bere
+   vykreslenou šířku, takže strop v CSS je bezpečný. */
+section.vizualize .container {
+	padding-inline: 0;
+}
+
+section.vizualize .container .top {
+	padding-inline: var(--rf-gutter);
+}
+
+section.vizualize .container .maping {
+	max-width: var(--rf-max);
+	margin-inline: auto;
+}
+
+.container .container .maping,
+.layoutViz section.vizualize .container .top {
+	padding-inline: 0;
+}
+
+/* Homepage: galerie + dispozice vedle sebe ve shellu */
+.homepageGalleryDispositionGrid {
+	max-width: var(--rf-shell);
+	padding-left: var(--rf-gutter);
+	padding-right: var(--rf-gutter);
+	gap: var(--rf-col-gap);
+}
+
+@media only screen and (max-width: 1199px) {
+	.homepageGalleryDispositionGrid {
+		max-width: var(--rf-shell);
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	.homepageGalleryDispositionGrid {
+		padding-left: var(--rf-gutter);
+		padding-right: var(--rf-gutter);
+	}
+}
+
+.homepageGalleryDispositionGrid section .container {
+	padding-inline: 0;
+}
+
+/* Patička */
+section.footerMain .container,
+section.footerEnd .container {
+	padding-left: var(--rf-gutter);
+	padding-right: var(--rf-gutter);
+}
+
+/* GDPR: kontejner byl content-box s 97 % + 24px paddingu → na mobilu
+   přetékal o 36px (schované přes overflow-x:hidden) */
+section.pageContent.pageContent--legal .container {
+	box-sizing: border-box;
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+}

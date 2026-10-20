@@ -1,0 +1,6 @@
+<svg width="107" height="108" viewBox="0 0 107 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="play-circle">
+<path id="play-circle-bg" d="M53.1667 98.1673C77.5592 98.1673 97.3333 78.3932 97.3333 54.0006C97.3333 29.6081 77.5592 9.83398 53.1667 9.83398C28.7741 9.83398 9 29.6081 9 54.0006C9 78.3932 28.7741 98.1673 53.1667 98.1673Z" fill="currentColor"/>
+<path id="play-circle-play" d="M44.3047 36.2793L70.888 54.0015L44.3047 71.7237V36.2793Z" fill="white"/>
+</g>
+</svg>

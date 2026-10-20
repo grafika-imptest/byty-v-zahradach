@@ -1,0 +1,354 @@
+/* =====================================================================
+   50 · Homepage
+   ===================================================================== */
+
+/* Hero vyplní přesně okno pod (nižší) hlavičkou — šablona počítá
+   s proměnnou --brave-header-height, kterou ale nikdo nenastavuje */
+:root {
+	--brave-header-height: var(--rf-header-h);
+}
+
+/* --- 360° hero ----------------------------------------------------------- */
+
+/* Text hero na levé hraně shellu (dřív +9rem navíc → jiná osa než logo).
+   Vrstva je absolutní přes celé hero, proto hranu dává padding, ne max-width. */
+section.panoramaHero .panoramaHero__copy {
+	max-width: none;
+	padding-inline: max(var(--rf-gutter), calc((100% - var(--rf-max)) / 2));
+}
+
+section.panoramaHero .panoramaHero__copyInner {
+	margin-left: 0;
+}
+
+/* Nadtitulek: dřív 16px zelená na obloze (kontrast ~2:1) a jediný bez
+   stylu ostatních nadtitulků → systémový eyebrow, bílý jako nadpis */
+section.panoramaHero .panoramaHero__copyInner .subtitle {
+	font: 700 1.4rem/2.4rem "Poppins", sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: rgb(255 255 255 / 0.92);
+	text-shadow: 0 1px 12px rgb(13 24 31 / 0.5);
+	margin-bottom: 1.2rem;
+}
+
+/* Nápověda a ovládání na hranách shellu, ne natvrdo 32px od okraje okna */
+section.panoramaHero .panoramaHero__hint {
+	left: max(var(--rf-gutter), calc((100% - var(--rf-max)) / 2));
+}
+
+section.panoramaHero .panoramaHero__controls {
+	right: max(var(--rf-gutter), calc((100% - var(--rf-max)) / 2));
+}
+
+/* Rychlé vyhledávání: popisky 9.7px → čitelné, tvar pilulky beze změny */
+section.panoramaHero .panoramaHero__quickSearchItem span {
+	font-size: max(1.25rem, 11.5px);
+	letter-spacing: 0.01em;
+}
+
+section.panoramaHero .panoramaHero__quickSearchTrigger {
+	font-size: max(1.5rem, 13px);
+	color: #5f5f5f;
+}
+
+section.panoramaHero .panoramaHero__quickSearchItem {
+	transition: background-color var(--rf-dur) var(--rf-ease);
+	border-radius: 3.4rem;
+}
+
+section.panoramaHero .panoramaHero__quickSearchItem:hover {
+	background: var(--rf-surface-2);
+}
+
+/* Mobil: H1, nadtitulek a CTA byly pod 768px display:none — první
+   obrazovka byla jen panoráma bez nadpisu. Bundle už má pro ≤639px
+   připravený horní gradient i umístění, jen ho zabíjelo display:none. */
+@media only screen and (max-width: 767px) {
+	section.panoramaHero .panoramaHero__copy {
+		align-items: flex-start;
+	}
+
+	section.panoramaHero .panoramaHero__copyInner {
+		display: block;
+		width: auto;
+		max-width: 34rem;
+		margin: 0;
+		transform: none;
+	}
+
+	section.panoramaHero .panoramaHero__copyInner h1 {
+		font-size: 3.6rem;
+		line-height: 1.08;
+		margin-bottom: 1.6rem;
+	}
+
+	section.panoramaHero .panoramaHero__lead {
+		display: none;
+	}
+}
+
+@media only screen and (min-width: 640px) and (max-width: 767px) {
+	section.panoramaHero .panoramaHero__copy {
+		padding-top: 16rem;
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	section.panoramaHero .panoramaHero__copy {
+		padding-top: 2.4rem;
+	}
+
+	section.panoramaHero .panoramaHero__cta .button {
+		height: 44px;
+		padding: 0 18px;
+		font-size: 12px;
+	}
+}
+
+/* --- Rytmus sekcí homepage: jeden krok místo 80/40/34/114 px ---------- */
+body.frontend-homepage section.homepageInteractive {
+	padding-top: var(--rf-section-y);
+}
+
+body.frontend-homepage section.vizualize.vizualize--compactTop {
+	padding-top: var(--rf-section-y);
+}
+
+body.frontend-homepage .homepageGalleryDispositionGrid {
+	/* + polovina převislého CTA vizualizace */
+	padding-top: calc(var(--rf-section-y) + 3rem);
+	padding-bottom: var(--rf-section-y);
+}
+
+body.frontend-homepage section.newsExtract {
+	padding-top: 0;
+}
+
+body.frontend-homepage section.newsExtract .container {
+	padding-top: var(--rf-section-y);
+	padding-bottom: var(--rf-section-y);
+}
+
+/* --- Lokalita: text + mapa ve shellu, poměr 5 : 7 ---------------------- */
+@media only screen and (min-width: 960px) {
+	section.homepageInteractive .container > .uk-grid-collapse {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		column-gap: var(--rf-col-gap);
+		align-items: center;
+		margin-left: 0;
+	}
+
+	section.homepageInteractive .container > .uk-grid-collapse > div {
+		width: auto;
+		padding-left: 0;
+	}
+
+	section.homepageInteractive .container .uk-grid > div:first-of-type {
+		justify-content: flex-start;
+	}
+
+	section.homepageInteractive .container .uk-grid > div .content .text {
+		max-width: 64rem;
+		margin: 0;
+	}
+
+	section.homepageInteractive .container .uk-grid > div .picture {
+		max-width: none;
+	}
+}
+
+section.homepageInteractive .container .uk-grid > div .picture div[data-map-id] {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	isolation: isolate;
+}
+
+@media only screen and (max-width: 959px) {
+	section.homepageInteractive .container .uk-grid > div .content .text {
+		width: auto;
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	section.homepageInteractive .container .uk-grid > div .content .text .editableBlock p {
+		max-width: 64ch;
+	}
+}
+
+/* --- Nadpisy sekcí: jedna úroveň pro samostatné sekce, druhá pro páry --
+   Dřív 30 / 30 / 30 / 32 / 50px — nejvedlejší sekce (aktuality) měla
+   největší nadpis. Váhy 600/700 a Poppins beze změny. */
+body.frontend-homepage section.homepageInteractive .container .uk-grid > div .content .text h2,
+body.frontend-homepage section.vizualize.vizualize--compactTop .top h2,
+body.frontend-homepage section.newsExtract .container .content .top .text h2 {
+	font: 600 4rem/1.18 "Poppins", sans-serif;
+	letter-spacing: -0.01em;
+	color: #000;
+}
+
+.homepageGalleryDispositionGrid section.dispositionShowcase .top h2,
+section.homepageGallery .container .galleryColumn .galleryColumn__heading h2 {
+	font: 700 3rem/1.25 "Poppins", sans-serif;
+	color: #000;
+}
+
+@media only screen and (max-width: 959px) {
+	body.frontend-homepage section.vizualize .container .top h2 {
+		text-align: left;
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	body.frontend-homepage section.homepageInteractive .container .uk-grid > div .content .text h2,
+	body.frontend-homepage section.vizualize.vizualize--compactTop .top h2,
+	body.frontend-homepage section.newsExtract .container .content .top .text h2 {
+		font-size: 3rem;
+		line-height: 1.22;
+	}
+
+	.homepageGalleryDispositionGrid section.dispositionShowcase .top h2,
+	section.homepageGallery .container .galleryColumn .galleryColumn__heading h2 {
+		font-size: 2.6rem;
+	}
+}
+
+/* --- Galerie + dispozice: spodní hrany a tlačítka v jedné lince -------- */
+.homepageGalleryDispositionGrid section.dispositionShowcase .top,
+.homepageGalleryDispositionGrid section.dispositionShowcase .tabs {
+	margin-bottom: 2.4rem;
+}
+
+@media only screen and (min-width: 1200px) {
+	/* 2 × 18rem miniatury + 0.8rem − záložky − okraj = 30rem */
+	.homepageGalleryDispositionGrid section.dispositionShowcase .buildingList {
+		height: 30rem;
+		grid-auto-rows: 1fr;
+		align-content: stretch;
+	}
+
+	.homepageGalleryDispositionGrid section.dispositionShowcase .panel__link {
+		margin-top: 4rem;
+	}
+}
+
+.homepageGalleryDispositionGrid section.dispositionShowcase .buildingList {
+	border-radius: var(--rf-radius-lg);
+	box-shadow: var(--rf-shadow-sm);
+	border: 1px solid var(--rf-line);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--rf-radius);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgb(13 24 31 / 0);
+	transition: background-color 0.3s var(--rf-ease);
+	pointer-events: none;
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox:hover img {
+	transform: scale(1.04);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox:hover::after {
+	background: rgb(13 24 31 / 0.12);
+}
+
+section.dispositionShowcase .tab {
+	transition: background-color var(--rf-dur) var(--rf-ease), border-color var(--rf-dur) var(--rf-ease), color var(--rf-dur) var(--rf-ease);
+}
+
+/* Dispozice na mobilu: okraj se dřív přičítal dvakrát (karta 61 % šířky) */
+@media only screen and (max-width: 639px) {
+	.homepageGalleryDispositionGrid section.dispositionShowcase .container,
+	.homepageGalleryDispositionGrid section.dispositionShowcase .showcase {
+		width: 100%;
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+@media only screen and (max-width: 479px) {
+	.homepageGalleryDispositionGrid section.dispositionShowcase .stats {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1.2rem;
+	}
+
+	section.dispositionShowcase .tab {
+		padding: 0.8rem 1.2rem 0.8rem 1.6rem;
+	}
+}
+
+@media only screen and (max-width: 359px) {
+	.homepageGalleryDispositionGrid section.dispositionShowcase .stats {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+/* --- Aktuality: karty vyplní sloupce, klidnější hover ------------------ */
+section.newsExtract .newsExtractCard {
+	max-width: none;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+section.newsExtract .newsExtract__grid .newsExtractCard > picture {
+	max-width: none;
+	height: auto;
+	aspect-ratio: 41 / 24;
+}
+
+section.newsExtract .newsExtractCard > picture {
+	border-radius: var(--rf-radius-lg);
+}
+
+section.newsExtract .newsExtractCard > picture img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.newsExtract .newsExtractCard:hover > picture img {
+	transform: scale(1.04);
+}
+
+section.newsExtract .newsExtractCard h3 {
+	transition: color var(--rf-dur) var(--rf-ease);
+}
+
+section.newsExtract .newsExtractCard:hover h3 {
+	color: var(--rf-green-dark);
+}
+
+/* Meta řádek: zelená na mátové měla kontrast ~1.9:1 → text tmavý, ikony zelené */
+section.newsExtract .newsExtractCard .newsExtractCard__meta {
+	color: var(--rf-ink-2);
+}
+
+section.newsExtract .newsExtractCard .newsExtractCard__meta .mdi {
+	color: var(--rf-green);
+}
+
+@media only screen and (max-width: 959px) {
+	body.frontend-homepage section.newsExtract .container .content .top .text {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	section.newsExtract .newsExtractCard:hover > picture img,
+	section.homepageGallery .container .galleryGrid > div .gallBox:hover img {
+		transform: none;
+	}
+}

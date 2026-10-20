@@ -1,0 +1,344 @@
+/* =====================================================================
+   80 · FAQ, aktuality, článek, kontakty, GDPR, kalkulačka, formuláře
+   ===================================================================== */
+
+/* Výchozí UIkit: růžové <em> (čte se jako chyba) — dědit barvu textu */
+em {
+	color: inherit;
+}
+
+/* --- FAQ ----------------------------------------------------------------- */
+/* Akordeon přes 128rem → odpovědi ~133 znaků na řádek; vlastní čtecí šířka */
+section.faqPack .container .faqList {
+	max-width: 96rem;
+	margin-inline: auto;
+}
+
+section.faqPack .container .faqList li .uk-accordion-content p,
+section.faqPack .container .faqList li .uk-accordion-content > ul {
+	max-width: 66ch;
+}
+
+section.faqPack .container .faqList li .uk-accordion-title {
+	background: #fff;
+	align-items: flex-start;
+	transition: background-color var(--rf-dur) var(--rf-ease), color var(--rf-dur) var(--rf-ease);
+}
+
+section.faqPack .container .faqList li .uk-accordion-title:hover {
+	background: var(--rf-surface-2);
+}
+
+section.faqPack .container .faqList li.uk-open .uk-accordion-title {
+	background: #fff;
+}
+
+section.faqPack .container .faqList li.uk-open .uk-accordion-title .q {
+	font-weight: 500;
+}
+
+section.faqPack .container .faqList li .uk-accordion-content {
+	padding-top: 0;
+}
+
+/* Fokus byl mimo box a overflow:hidden ho ořízl celý */
+section.faqPack .container .faqList li .uk-accordion-title:focus-visible {
+	outline-offset: -3px;
+}
+
+section.faqPack .container .faqList li .uk-accordion-title .ico {
+	height: 2.9rem;
+}
+
+@media only screen and (max-width: 959px) {
+	.frontend-faq section.faqPack .container .faqList {
+		margin-inline: 0;
+	}
+
+	.frontend-faq section.faqPack .container .faqTabs {
+		padding-inline: 0;
+	}
+}
+
+/* --- Karty aktualit a POI (pageConBox) + Další aktuality (newsBox) ----- */
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox,
+section.newsList .newsBox {
+	max-width: none;
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox > picture,
+section.newsList .newsBox > picture {
+	height: auto;
+	aspect-ratio: 3 / 2;
+	max-width: none;
+	border-radius: var(--rf-radius-lg);
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox h3 {
+	-webkit-line-clamp: 2;
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox .pageConBox__distance {
+	color: var(--rf-green-dark);
+	font-size: max(1.3rem, 12px);
+}
+
+:is(.pageConBox, .newsBox) h3 {
+	transition: color var(--rf-dur) var(--rf-ease);
+}
+
+:is(.pageConBox, .newsBox):hover h3 {
+	color: var(--rf-green-dark);
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox > picture img,
+section.newsList .newsBox > picture img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox:hover > picture img,
+section.newsList .newsBox:hover > picture img {
+	transform: scale(1.04);
+}
+
+/* --- Detail článku: tělo je hlavní text, ne slabší než perex ----------- */
+section.blogDetail {
+	padding: 1.6rem 0 0;
+}
+
+section.blogDetail .container .text {
+	max-width: 66ch;
+}
+
+section.blogDetail .container .text :is(p, li) {
+	font: 400 1.8rem/1.7 "Poppins", sans-serif;
+	color: var(--rf-ink-2);
+}
+
+section.blogDetail .container .text h2 {
+	margin-top: 4.8rem;
+}
+
+section.blogDetail .container .text h3 {
+	margin-top: 3.6rem;
+}
+
+section.blogDetail .container .text :is(h2, h3):first-child {
+	margin-top: 0;
+}
+
+section.blogDetail .container .text a {
+	color: var(--rf-green-dark);
+	text-decoration: underline;
+	text-underline-offset: 0.3em;
+}
+
+section.blogDetail .container .text :is(img, iframe) {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--rf-radius-lg);
+}
+
+/* --- Kontakty ------------------------------------------------------------ */
+section.topContact {
+	padding: clamp(32px, 4vw, 72px) 0;
+}
+
+section.topContact .container > .uk-grid {
+	align-items: center;
+}
+
+section.topContact .container .uk-grid > div .mapWrapper {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	isolation: isolate;
+}
+
+section.topContact .container .uk-grid > div .mapWrapper div[data-map-id] {
+	height: clamp(42rem, 62vh, 60rem);
+}
+
+section.topContact .container .uk-grid > div .text .entityBox {
+	border-radius: var(--rf-radius-lg);
+}
+
+@media only screen and (max-width: 959px) {
+	section.topContact .container .uk-grid > div .text {
+		padding-inline: 0;
+	}
+}
+
+/* Zelená sekce s formulářem: 64px světlé pruhy nad/pod fotkou a obsah
+   posunutý dolů (213 vs 102px) → vzor, který šablona už má pro oblíbené */
+@media only screen and (min-width: 1200px) {
+	body.frontend-contact section.form {
+		height: auto;
+		overflow: hidden;
+		padding: clamp(64px, 7vw, 128px) 0;
+	}
+
+	body.frontend-contact section.form > picture {
+		position: absolute;
+		inset: 0;
+		height: 100%;
+	}
+
+	body.frontend-contact section.form .container {
+		position: relative;
+		left: auto;
+		top: auto;
+		transform: none;
+	}
+
+	body.frontend-contact section.form .container > .content {
+		padding-top: 0;
+	}
+
+	body.frontend-contact section.form .container > .content > .uk-grid {
+		align-items: center;
+	}
+}
+
+/* Pole formuláře na zeleném: fokus byl k nerozeznání, tlačítko na hover
+   splynulo s pozadím sekce */
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea) {
+	transition: background-color var(--rf-dur), border-color var(--rf-dur), box-shadow var(--rf-dur);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea):hover {
+	background: rgb(255 255 255 / 0.85);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea):focus {
+	background: #fff;
+	border-color: #fff;
+	box-shadow: 0 0 0 4px rgb(255 255 255 / 0.35);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea):focus-visible {
+	outline: none !important;
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div .submitPack input[type="submit"] {
+	color: var(--rf-green-dark);
+	transition: background-color var(--rf-dur), color var(--rf-dur);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div .submitPack:hover input[type="submit"] {
+	background: var(--rf-green-dark);
+	color: #fff;
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div .submitPack:hover picture.icon svg path {
+	stroke: #fff !important;
+}
+
+/* Souhlas a „ozveme se do 24 h“: 10.9px bílá na zelené → čitelnější */
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div > p {
+	font-size: max(1.4rem, 13px);
+	font-weight: 500;
+	line-height: 1.6;
+	max-width: 34rem;
+}
+
+/* --- GDPR / právní text --------------------------------------------------- */
+section.pageContent.pageContent--legal .container .text :is(p, ul, ol) {
+	max-width: 66ch;
+}
+
+section.pageContent.pageContent--legal .container .text li {
+	font-size: 1.7rem;
+	line-height: 1.75;
+}
+
+section.pageContent.pageContent--legal .container .text li::before {
+	top: 1.15em;
+}
+
+body.frontend-processingpersonaldata section.pageTopPanel.pageTopPanel--plain .container {
+	max-width: calc(92rem + 2 * var(--rf-gutter));
+}
+
+@media only screen and (max-width: 959px) {
+	section.pageContent.pageContent--legal .container .text {
+		width: 100%;
+	}
+}
+
+/* --- Investiční kalkulačka ------------------------------------------------ */
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField:focus-within {
+	border-color: var(--rf-green);
+	box-shadow: 0 0 0 3px rgb(66 199 135 / 0.18);
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .uk-input:focus-visible {
+	outline: none !important;
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .stepper:focus-visible {
+	outline-offset: -2px;
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row label {
+	font-size: max(1.4rem, 12.5px);
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row > div input {
+	font-size: max(1.7rem, 15px);
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+}
+
+@media only screen and (max-width: 959px) {
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField {
+		grid-template-columns: 4.8rem 1fr 4.8rem;
+		grid-template-rows: 1fr;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .stepper[data-icalc-stepper="-1"] {
+		grid-column: 1;
+		grid-row: 1;
+		border-left: 0;
+		border-right: 1px solid #e3e3e3;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField > .uk-inline {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .stepper[data-icalc-stepper="1"] {
+		grid-column: 3;
+		grid-row: 1;
+		border-bottom: 0;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .presets button {
+		min-height: 40px;
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	section.investmentCalculator .scenarioTable :is(th, td):first-child {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		background: #fff;
+		min-width: 11rem;
+	}
+}
+
+/* Kontakty na hraně shellu: text byl odsazený margin-left:auto + 10 %,
+   formulář zarovnaný ke středu (margin-left:auto) */
+@media only screen and (min-width: 960px) {
+	section.topContact .container .uk-grid > div .text {
+		margin-left: 0;
+		margin-right: var(--rf-col-gap);
+		max-width: 60rem;
+	}
+
+	section.form .container > .content .uk-grid > div .formPack {
+		margin-left: 0;
+		max-width: 68rem;
+	}
+}

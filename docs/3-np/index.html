@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<!DOCTYPE html> <html lang="cs"> <head> <meta name="robots" content="noindex, nofollow"><script>/* Statický shim pro náhled na GitHub Pages — NENÍ součástí UI úprav.
+   Živý web běží na PHP/Nette; tady jen zařizuje, aby kopie fungovala bez serveru:
+   - AJAX na kořenové cesty míří pod BASE, data map z uložených JSON, signály (?do=…) na prázdnou odpověď,
+   - cookie lišta se dá zavřít (pamatuje si to localStorage),
+   - klasické POST formuláře se neodešlou (server tu není) — ukáže se krátké upozornění,
+   - přepínač Původní / Upravená / Upravená V2 (localStorage + ?puvodni / ?upravene / ?v2). */
+(function () {
+	var B = '/byty-v-zahradach';
+	window.__BRAVE_BASE = B;
+
+	var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+		set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+	var qs = location.search;
+	if (/[?&]puvodni\b/.test(qs)) store.set('brave-refine', 'off');
+	if (/[?&]upravene\b/.test(qs)) store.set('brave-refine', 'on');
+	// „Upravená V2“ (/v3/) je v přepínači skrytá — stránka zůstává jen na přímé adrese.
+	// Zpět ji zapne SHOW_V3 = true (přesměrování homepage + tlačítko).
+	var SHOW_V3 = false;
+	var path = location.pathname, onV3 = path.indexOf(B + '/v3/') === 0;
+	if (SHOW_V3 && /[?&]v2\b/.test(qs)) store.set('brave-refine', 'v3');
+	if (SHOW_V3 && onV3) store.set('brave-refine', 'v3');
+	var mode = onV3 ? 'v3' : store.get('brave-refine') || 'on';
+	if (mode === 'v3' && !SHOW_V3 && !onV3) mode = 'on';
+	// homepage v režimu „Upravená V2“ → nový návrh pod /v3/ (podstránky zůstávají upravené)
+	if (SHOW_V3 && mode === 'v3' && (path === B + '/' || path === B + '/index.html')) { location.replace(B + '/v3/'); return; }
+	var off = mode === 'off';
+	window.__BRAVE_REFINE_OFF = off;
+	var html = document.documentElement;
+	html.classList.add('is-static-preview');
+	if (off) html.classList.add('refine-off');
+	if (store.get('brave-static-cookie')) html.classList.add('static-cookie-ok');
+
+	function slug(s) {
+		return s.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'root';
+	}
+	function map(u) {
+		if (typeof u !== 'string') return u;
+		var v = u;
+		if (v.indexOf(location.origin) === 0) v = v.slice(location.origin.length);
+		if (v.indexOf('https://demo.bravedevelopment.cz') === 0) v = v.slice(33) || '/';
+		if (v.charAt(0) === '?') v = location.pathname + v;
+		if (v.charAt(0) !== '/' || v.charAt(1) === '/') return u;
+		if (/[?&]do=map-[a-z0-9]+-(options|markers|lines)/i.test(v)) {
+			if (v.indexOf(B + '/') === 0) v = v.slice(B.length) || '/';
+			return B + '/_data/' + slug(v) + '.json';
+		}
+		if (/[?&]_?do=/.test(v)) return B + '/_data/noop.json';
+		if (v.indexOf(B + '/') === 0 || v === B) return u;
+		return B + v;
+	}
+
+	var open = XMLHttpRequest.prototype.open;
+	XMLHttpRequest.prototype.open = function (method, url) {
+		var mapped = map(url);
+		var args = Array.prototype.slice.call(arguments);
+		if (mapped !== url) {
+			args[1] = mapped;
+			// GitHub Pages na POST odpoví 405 — u statických odpovědí stačí GET
+			if (/\/_data\//.test(mapped)) args[0] = 'GET';
+		}
+		return open.apply(this, args);
+	};
+	if (window.fetch) {
+		var f = window.fetch;
+		window.fetch = function (input, init) {
+			if (typeof input === 'string') {
+				var m = map(input);
+				if (m !== input && /\/_data\//.test(m) && init) init = Object.assign({}, init, { method: 'GET', body: undefined });
+				input = m;
+			}
+			return f.call(this, input, init);
+		};
+	}
+
+	function toast(text) {
+		var t = document.createElement('div');
+		t.className = 'staticToast';
+		t.setAttribute('role', 'status');
+		t.textContent = text;
+		document.body.appendChild(t);
+		setTimeout(function () { t.classList.add('is-in'); }, 10);
+		setTimeout(function () { t.classList.remove('is-in'); setTimeout(function () { t.remove(); }, 400); }, 3600);
+	}
+
+	document.addEventListener('submit', function (e) {
+		var form = e.target;
+		if (!form || form.tagName !== 'FORM') return;
+		if (form.id === 'frm-cookieBar-settingsForm') {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			store.set('brave-static-cookie', '1');
+			html.classList.add('static-cookie-ok');
+			return;
+		}
+		// Bublá až sem, takže validace Nette (na formuláři) už proběhla a případně
+		// odeslání zastavila — upozornění jen u platně vyplněného formuláře.
+		if ((form.method || '').toLowerCase() === 'post' && !form.classList.contains('ajax')) {
+			if (!e.defaultPrevented) {
+				e.preventDefault();
+				toast('Statický náhled: formulář se neodesílá, na živém webu proběhne odeslání.');
+			}
+		}
+	});
+	document.addEventListener('submit', function (e) {
+		var form = e.target;
+		if (form && form.classList && form.classList.contains('ajax') && /reoUnit(Favorite|Comparison)/.test(form.id || '')) {
+			toast('Statický náhled: oblíbené a porovnání ukládá server, zde se neukládají.');
+		}
+	}, true);
+	// Cookie lišta: tlačítka jsou submit inputy uvnitř ajax formuláře
+	document.addEventListener('click', function (e) {
+		var b = e.target && e.target.closest && e.target.closest('#frm-cookieBar-settingsForm [type=submit]');
+		if (!b) return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		store.set('brave-static-cookie', '1');
+		html.classList.add('static-cookie-ok');
+	}, true);
+
+	var css = document.createElement('style');
+	css.textContent =
+		'html.static-cookie-ok .cookie-bar-modal{display:none!important}' +
+		'.staticToast{position:fixed;left:50%;bottom:24px;z-index:100000;transform:translate(-50%,12px);opacity:0;max-width:calc(100% - 32px);' +
+		'background:#111;color:#fff;font:500 13px/1.45 Poppins,system-ui,sans-serif;padding:12px 18px;border-radius:8px;box-shadow:0 10px 30px rgb(0 0 0/.25);transition:.3s}' +
+		'.staticToast.is-in{opacity:1;transform:translate(-50%,0)}' +
+		'.refineSwitch{position:fixed;left:16px;bottom:16px;z-index:9990;display:flex;gap:2px;padding:3px;border-radius:999px;background:rgb(17 17 17/.82);' +
+		'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font:600 11px/1 Poppins,system-ui,sans-serif;letter-spacing:.02em;box-shadow:0 6px 20px rgb(0 0 0/.18)}' +
+		'.refineSwitch button{all:unset;cursor:pointer;color:rgb(255 255 255/.7);padding:7px 11px;border-radius:999px;transition:.2s}' +
+		'.refineSwitch button[aria-pressed=true]{background:#fff;color:#111}' +
+		'.refineSwitch button:focus-visible{outline:2px solid #3cd070;outline-offset:2px}' +
+		'.refineSwitch button{position:relative}' +
+		'.refineSwitch__tip{position:absolute;left:0;bottom:calc(100% + 12px);width:260px;padding:12px 14px;background:#111;color:rgb(255 255 255/.78);' +
+		'font:400 12px/1.5 system-ui,sans-serif;letter-spacing:0;white-space:normal;text-align:left;border-radius:8px;box-shadow:0 10px 30px rgb(0 0 0/.25);' +
+		'opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .18s,transform .18s,visibility 0s .18s;pointer-events:none}' +
+		'.refineSwitch__tip b{display:block;margin-bottom:4px;color:#fff;font-weight:600;font-size:12.5px}' +
+		'.refineSwitch button:hover .refineSwitch__tip,.refineSwitch button:focus-visible .refineSwitch__tip{opacity:1;visibility:visible;transform:none;transition-delay:.25s,.25s,0s}' +
+		'@media (hover:none){.refineSwitch__tip{display:none}}' +
+		'@media print{.refineSwitch{display:none}}';
+	document.head.appendChild(css);
+
+	document.addEventListener('DOMContentLoaded', function () {
+		var s = document.createElement('div');
+		s.className = 'refineSwitch';
+		s.setAttribute('role', 'group');
+		s.setAttribute('aria-label', 'Verze náhledu');
+		// Krátký popis každé verze v tooltipu (hover i fokus klávesnicí)
+		var tips = {
+			off: ['Původní šablona', 'Web přesně tak, jak běží na demo.bravedevelopment.cz. Beze změn — slouží ke srovnání.'],
+			on: ['Upravená', 'Stejný obsah i funkce jako původní, jen doladěný vzhled: kompaktní hlavička, která se při scrollu schová, širší rozvržení, čistší písmo a mezery. Platí pro celý web.'],
+			v3: ['Upravená V2', 'Nový návrh úvodní stránky: panoráma přes celou obrazovku s vyhledávačem, ostré rohy, nové písmo a texty. Zatím jen homepage — podstránky se zobrazí v Upravené verzi.']
+		};
+		function btn(v, label, on) {
+			return '<button type="button" data-v="' + v + '" aria-pressed="' + on + '" aria-describedby="rs-tip-' + v + '">' + label +
+				'<span class="refineSwitch__tip" role="tooltip" id="rs-tip-' + v + '"><b>' + tips[v][0] + '</b>' + tips[v][1] + '</span></button>';
+		}
+		s.innerHTML = btn('off', 'Původní', off) + btn('on', 'Upravená', mode === 'on') + (SHOW_V3 || onV3 ? btn('v3', 'Upravená V2', mode === 'v3') : '');
+		s.addEventListener('click', function (e) {
+			var b = e.target.closest('button');
+			if (!b || b.getAttribute('aria-pressed') === 'true') return;
+			var v = b.getAttribute('data-v');
+			store.set('brave-refine', v);
+			if (v === 'v3') location.href = B + '/v3/';
+			else if (onV3) location.href = B + '/';
+			else location.reload();
+		});
+		document.body.appendChild(s);
+	});
+})();
+</script> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1"> <meta name="author" content="Byty v zahradách & IMPnet"> <meta name="copyright" content="HICH Holding s.r.o."> <meta name="application-name" content="Byty v zahradách">   <meta name="theme-color" content="#617952"> <meta name="msapplication-TileColor" content="#617952"> <link rel="shortcut icon" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.32x32.exact.ico" > <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.57x57.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="60x60" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.60x60.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.72x72.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.76x76.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.114x114.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.120x120.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.144x144.exact.png" > <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/byty-v-zahradach/www/upload/f0dec1d8/favicon-brave/favicon-brave.152x152.exact.png" >          <link rel="preload" href="/byty-v-zahradach/www/Development/cache/e310bc7c7c3b626240875905e13200a4.css?modified=1790938914" as="style"> <link rel="stylesheet" href="/byty-v-zahradach/www/Development/cache/e310bc7c7c3b626240875905e13200a4.css?modified=1790938914" type="text/css" media="screen"><link rel="preload" href="/byty-v-zahradach/www/Development/cache/9710ee2e4fc1b09cbf7a1a22a72e21d1.js?modified=1791282034" as="script"> <script type="text/javascript" src="/byty-v-zahradach/www/Development/cache/9710ee2e4fc1b09cbf7a1a22a72e21d1.js?modified=1791282034"></script> <script id="snippet-gtm-">
+	window.dataLayer = window.dataLayer || [];
+		dataLayer.push({"cart":[],"visitorType":"low-value"});
+</script><script>
+	window.dataLayer = window.dataLayer || [];
+	(function(){
+		window.dataLayer.push(arguments);
+	})(
+		'consent',
+		'default',
+		{
+			'functionality_storage': 'granted',
+			'security_storage': 'granted',
+			'personalization_storage': 'denied',
+			'ad_storage': 'denied',
+			'analytics_storage': 'denied',
+			'ad_user_data': 'denied',
+			'ad_personalization': 'denied',
+			'wait_for_update': 2000
+		}
+	);
+</script>        <title id="snippet--metaSnippet">3. NP | Byty v zahradách</title> <link rel="canonical" href="https://demo.bravedevelopment.cz/dum-a-1-np" > <link rel="stylesheet" href="/byty-v-zahradach/refine/brave-refine.css" id="brave-refine-css"><script>window.__BRAVE_REFINE_OFF&&(document.getElementById('brave-refine-css').disabled=true)</script><script src="/byty-v-zahradach/refine/brave-refine.js" defer></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Urbanist:wght@400;500;600;700&display=swap"><link rel="icon" href="/byty-v-zahradach/project/img/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/byty-v-zahradach/project/project.css"><meta property="og:title" content="3. NP | Byty v zahradách"><meta property="og:description" content="Byty v 3. NP domu Byty v zahradách: 9 bytů."><meta property="og:image" content="/byty-v-zahradach/project/img/viz-1-1440.webp"><meta property="og:type" content="website"><script type="application/ld+json">{"@context":"https://schema.org","@type":"ApartmentComplex","name":"Byty v zahradách","description":"Byty v zahradách – nový bytový dům v ulici Engelmüllerova, Praha – Řepy. 34 bytů 1+kk až 3+kk s balkonem, terasou nebo zahradou, klimatizace a garáž v domě.","numberOfAccommodationUnits":34,"address":{"@type":"PostalAddress","streetAddress":"Engelmüllerova","postalCode":"163 00","addressLocality":"Praha – Řepy","addressCountry":"CZ"},"geo":{"@type":"GeoCoordinates","latitude":50.06664,"longitude":14.29415}}</script></head> <body class="frontend-reoprojectpart"> <header> <section class="topBar" data-uk-sticky="show-on-up: true"> <div class="container"> <div class="uk-grid-small" data-uk-grid> <div class="uk-width-auto fx fxa"> <a href="/byty-v-zahradach/" class="logo" title="Byty v zahradách"><img class="bvzLogoImg" src="/byty-v-zahradach/project/img/logo/logo.svg" alt="Byty v zahradách" width="266" height="58"></a> </div> <div class="uk-width-expand"> <div class="menuPack"> <div class="menuTop uk-visible@l">    </div> <div class="menuBar"> <nav class="uk-navbar-container uk-navbar-transparent menu-text uk-visible@l" data-uk-navbar> <div class="uk-navbar-right"> <ul class="uk-navbar-nav"><li><a href="/byty-v-zahradach/o-projektu/"><span>O projektu</span></a></li><li><a href="/byty-v-zahradach/standardy/"><span>Standardy</span></a></li><li><a href="/byty-v-zahradach/lokalita/"><span>Lokalita</span></a></li><li><a href="/byty-v-zahradach/aktuality/"><span>Aktuality</span></a></li><li><a href="/byty-v-zahradach/kontakty/"><span>Kontakt</span></a></li></ul> </div> </nav> <nav class="uk-navbar-container uk-navbar-transparent" data-uk-navbar> <div class="uk-navbar-right"> <ul class="uk-navbar-nav"> <li> <a href="/byty-v-zahradach/nabidka-nemovitosti/" class="button button-main">Výběr bytů<i class="mdi mdi-chevron-right"></i></a> </li> </ul> </div> </nav> <a class="uk-navbar-toggle uk-hidden@l" data-uk-toggle="target: #offcanvas-nav" href="#" aria-label="Menu"> <img src="/byty-v-zahradach/www/Development/images/svg/menu_toggle.svg" class="hamburger" width="36" height="36" alt="menu toggle" data-uk-svg> </a> </div> </div> </div> </div> </div> </section> <div class="widget"><a href="mailto:zraly@profiserv.cz"><span><i class="mdi mdi-email"></i><span>zraly@profiserv.cz</span></span></a><a href="tel:+420776825212" class="phone"><span><i class="mdi mdi-phone"></i><span>+420 776 825 212</span></span></a></div> </header> <div id="offcanvas-nav" data-uk-offcanvas="mode: slide; overlay: true; flip: true"> <div class="uk-offcanvas-bar"> <button class="uk-offcanvas-close" type="button" data-uk-close aria-label="Zavřít"></button> <a href="/byty-v-zahradach/" class="logo" title="Byty v zahradách"><img class="bvzLogoImg" src="/byty-v-zahradach/project/img/logo/logo.svg" alt="Byty v zahradách" width="266" height="58"></a>  <ul class="uk-nav uk-nav-default uk-nav-parent-icon offcanvasMainNav" data-uk-nav><li class="uk-active"><a href="/byty-v-zahradach/nabidka-nemovitosti/"><span>Výběr bytů</span></a></li><li><a href="/byty-v-zahradach/o-projektu/"><span>O projektu</span></a></li><li><a href="/byty-v-zahradach/standardy/"><span>Standardy</span></a></li><li><a href="/byty-v-zahradach/lokalita/"><span>Lokalita</span></a></li><li><a href="/byty-v-zahradach/aktuality/"><span>Aktuality</span></a></li><li><a href="/byty-v-zahradach/kontakty/"><span>Kontakt</span></a></li></ul> </div> </div> <main><section class="projectListTitle"><div class="container"><div class="text"><p class="subtitle">9 bytů v podlaží</p><h1>3. NP</h1></div></div></section><section class="floorExtract"> <div class="container"> <div class="content"> <p class="backLink"><a href="/byty-v-zahradach/nabidka-nemovitosti/"><i class="mdi mdi-chevron-left"></i><span>Zpět na výběr bytů</span></a></p> <div class="floorExtract-layout" data-current-building="Byty v zahradách">  <div class="floorExtract-floors"><div class="floorsList"><a href="/byty-v-zahradach/1-np/" class="floorBtn" data-floor-state="available" data-floor-number="1" title="1. NP">1. NP</a><a href="/byty-v-zahradach/2-np/" class="floorBtn" data-floor-state="available" data-floor-number="2" title="2. NP">2. NP</a><a href="/byty-v-zahradach/3-np/" class="floorBtn is-active" data-floor-state="available" data-floor-number="3" title="3. NP">3. NP</a><a href="/byty-v-zahradach/4-np/" class="floorBtn" data-floor-state="available" data-floor-number="4" title="4. NP">4. NP</a></div></div> <div class="floorExtract-map"> <div class="floorExtract-plan" data-floor-plan> <div class="mapingFloor mapContent"><img src="/byty-v-zahradach/project/img/plans/podlazi-3.webp" alt="Půdorys 3. NP" class="map" data-imagemap-id="3"> <template data-imagemap-polygon="301" data-imagemap-coordinates="[{&quot;x&quot;:19.44,&quot;y&quot;:12.5},{&quot;x&quot;:45.79,&quot;y&quot;:12.5},{&quot;x&quot;:45.79,&quot;y&quot;:38.24},{&quot;x&quot;:19.44,&quot;y&quot;:38.24}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-301/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.01</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">2+kk, 47,8&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="302" data-imagemap-coordinates="[{&quot;x&quot;:0.79,&quot;y&quot;:12.5},{&quot;x&quot;:19.44,&quot;y&quot;:12.5},{&quot;x&quot;:19.44,&quot;y&quot;:38.24},{&quot;x&quot;:0.79,&quot;y&quot;:38.24}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-302/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.02</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">1+kk, 33&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="303" data-imagemap-coordinates="[{&quot;x&quot;:0.79,&quot;y&quot;:38.24},{&quot;x&quot;:19.84,&quot;y&quot;:38.24},{&quot;x&quot;:19.84,&quot;y&quot;:71.32},{&quot;x&quot;:0.79,&quot;y&quot;:71.32}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-303/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.03</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">2+kk, 41,1&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="304" data-imagemap-coordinates="[{&quot;x&quot;:19.84,&quot;y&quot;:44.85},{&quot;x&quot;:45.79,&quot;y&quot;:44.85},{&quot;x&quot;:45.79,&quot;y&quot;:71.32},{&quot;x&quot;:19.84,&quot;y&quot;:71.32}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-304/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.04</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">2+kk, 48,2&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="305" data-imagemap-coordinates="[{&quot;x&quot;:56.9,&quot;y&quot;:12.5},{&quot;x&quot;:67.86,&quot;y&quot;:12.5},{&quot;x&quot;:67.86,&quot;y&quot;:47.79},{&quot;x&quot;:56.9,&quot;y&quot;:47.79}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-305/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.05</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">1+kk, 26,1&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="306" data-imagemap-coordinates="[{&quot;x&quot;:67.86,&quot;y&quot;:12.5},{&quot;x&quot;:78.57,&quot;y&quot;:12.5},{&quot;x&quot;:78.57,&quot;y&quot;:47.79},{&quot;x&quot;:67.86,&quot;y&quot;:47.79}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-306/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.06</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">1+kk, 26,6&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="307" data-imagemap-coordinates="[{&quot;x&quot;:78.57,&quot;y&quot;:12.5},{&quot;x&quot;:99.21,&quot;y&quot;:12.5},{&quot;x&quot;:99.21,&quot;y&quot;:47.79},{&quot;x&quot;:78.57,&quot;y&quot;:47.79}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-307/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.07</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">2+kk, 51,4&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="308" data-imagemap-coordinates="[{&quot;x&quot;:75.79,&quot;y&quot;:47.79},{&quot;x&quot;:99.21,&quot;y&quot;:47.79},{&quot;x&quot;:99.21,&quot;y&quot;:88.24},{&quot;x&quot;:75.79,&quot;y&quot;:88.24}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-308/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.08</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">3+kk, 64,3&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template> <template data-imagemap-polygon="309" data-imagemap-coordinates="[{&quot;x&quot;:56.9,&quot;y&quot;:54.41},{&quot;x&quot;:75.79,&quot;y&quot;:54.41},{&quot;x&quot;:75.79,&quot;y&quot;:88.24},{&quot;x&quot;:56.9,&quot;y&quot;:88.24}]" data-imagemap-state="available" data-imagemap-href="/byty-v-zahradach/byt-309/" data-imagemap-target="_self"><div class="qtip-content"><div class="qtipBox-headerPart"><div class="name">Byt 3.09</div></div><div class="qtipBox-bodyPart"><div class="row"><span class="label">Dispozice</span><span class="value">2+kk, 44,6&nbsp;m<sup>2</sup></span></div><div class="row"><span class="label">Stav</span><span class="value greeny">Volný</span></div><div class="row"><span class="label">Cena</span><span class="value">na vyžádání</span></div><div class="row"><span class="label">Venku</span><span class="value">balkon 7&nbsp;m<sup>2</sup></span></div></div></div></template></div> <div id="viz-cursor" aria-hidden="true"> <div class="viz-cursor-inner"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line> </svg> </div> <span class="viz-cursor-label">Detail jednotky</span> </div> </div>  </div> </div> </div> </div> </section><section class="unitsTableSection"><div class="container"><div class="unitsGrid uk-grid-small uk-child-width-1-2@s uk-child-width-1-3@m uk-child-width-1-4@l" data-uk-grid><div data-dispo="2+kk" data-floor="3" data-area="47.8" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:19.44,&quot;y&quot;:12.5},{&quot;x&quot;:45.79,&quot;y&quot;:12.5},{&quot;x&quot;:45.79,&quot;y&quot;:38.24},{&quot;x&quot;:19.44,&quot;y&quot;:38.24}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-301/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-301.webp" alt="Půdorys bytu 3.01" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.01</h3><p><span>3. NP</span><span>2+kk</span><span>47,8 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-301/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="1+kk" data-floor="3" data-area="33" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:0.79,&quot;y&quot;:12.5},{&quot;x&quot;:19.44,&quot;y&quot;:12.5},{&quot;x&quot;:19.44,&quot;y&quot;:38.24},{&quot;x&quot;:0.79,&quot;y&quot;:38.24}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-302/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-302.webp" alt="Půdorys bytu 3.02" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.02</h3><p><span>3. NP</span><span>1+kk</span><span>33 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-302/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="2+kk" data-floor="3" data-area="41.1" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:0.79,&quot;y&quot;:38.24},{&quot;x&quot;:19.84,&quot;y&quot;:38.24},{&quot;x&quot;:19.84,&quot;y&quot;:71.32},{&quot;x&quot;:0.79,&quot;y&quot;:71.32}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-303/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-303.webp" alt="Půdorys bytu 3.03" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.03</h3><p><span>3. NP</span><span>2+kk</span><span>41,1 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-303/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="2+kk" data-floor="3" data-area="48.2" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:19.84,&quot;y&quot;:44.85},{&quot;x&quot;:45.79,&quot;y&quot;:44.85},{&quot;x&quot;:45.79,&quot;y&quot;:71.32},{&quot;x&quot;:19.84,&quot;y&quot;:71.32}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-304/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-304.webp" alt="Půdorys bytu 3.04" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.04</h3><p><span>3. NP</span><span>2+kk</span><span>48,2 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-304/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="1+kk" data-floor="3" data-area="26.1" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:56.9,&quot;y&quot;:12.5},{&quot;x&quot;:67.86,&quot;y&quot;:12.5},{&quot;x&quot;:67.86,&quot;y&quot;:47.79},{&quot;x&quot;:56.9,&quot;y&quot;:47.79}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-305/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-305.webp" alt="Půdorys bytu 3.05" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.05</h3><p><span>3. NP</span><span>1+kk</span><span>26,1 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-305/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="1+kk" data-floor="3" data-area="26.6" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:67.86,&quot;y&quot;:12.5},{&quot;x&quot;:78.57,&quot;y&quot;:12.5},{&quot;x&quot;:78.57,&quot;y&quot;:47.79},{&quot;x&quot;:67.86,&quot;y&quot;:47.79}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-306/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-306.webp" alt="Půdorys bytu 3.06" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.06</h3><p><span>3. NP</span><span>1+kk</span><span>26,6 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-306/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="2+kk" data-floor="3" data-area="51.4" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:78.57,&quot;y&quot;:12.5},{&quot;x&quot;:99.21,&quot;y&quot;:12.5},{&quot;x&quot;:99.21,&quot;y&quot;:47.79},{&quot;x&quot;:78.57,&quot;y&quot;:47.79}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-307/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-307.webp" alt="Půdorys bytu 3.07" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.07</h3><p><span>3. NP</span><span>2+kk</span><span>51,4 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-307/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="3+kk" data-floor="3" data-area="64.3" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:75.79,&quot;y&quot;:47.79},{&quot;x&quot;:99.21,&quot;y&quot;:47.79},{&quot;x&quot;:99.21,&quot;y&quot;:88.24},{&quot;x&quot;:75.79,&quot;y&quot;:88.24}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-308/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-308.webp" alt="Půdorys bytu 3.08" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.08</h3><p><span>3. NP</span><span>3+kk</span><span>64,3 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-308/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div><div data-dispo="2+kk" data-floor="3" data-area="44.6" data-out="balkon">
+<div class="flatCard rfFlatCard" data-unit-floor-plan="/byty-v-zahradach/project/img/plans/podlazi-3.webp" data-unit-floor-polygon="[{&quot;x&quot;:56.9,&quot;y&quot;:54.41},{&quot;x&quot;:75.79,&quot;y&quot;:54.41},{&quot;x&quot;:75.79,&quot;y&quot;:88.24},{&quot;x&quot;:56.9,&quot;y&quot;:88.24}]" data-unit-floor-id="3" data-unit-floor-name="3. NP" data-unit-floor-state="available">
+<div class="top"><label>Volný</label></div>
+<a href="/byty-v-zahradach/byt-309/" class="picture rfPlanPic"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/plans/byt-309.webp" alt="Půdorys bytu 3.09" width="800" height="600"></picture></a>
+<div class="title"><h3>Byt 3.09</h3><p><span>3. NP</span><span>2+kk</span><span>44,6 m<sup>2</sup></span><span>Balkon</span></p></div>
+<div class="cardFoot"><p class="price rfPriceOnRequest">Cena na vyžádání</p><a href="/byty-v-zahradach/byt-309/" class="button"><span>Detail bytu</span><i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></div>
+</div></div></div></div></section><section class="benefits"><div class="container"><div class="content"><div class="uk-grid-small" data-uk-grid><div class="uk-width-1-4@m uk-width-1-2"><div class="benefitsBox"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/icons/mdiFlowerOutline.svg" alt=""></picture><h3>Zahrady a terasy</h3><p>Každý byt má balkon nebo terasu, 4 byty v přízemí i vlastní zahradu.</p></div></div><div class="uk-width-1-4@m uk-width-1-2"><div class="benefitsBox"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/icons/mdiSnowflake.svg" alt=""></picture><h3>Klimatizace v pokojích</h3><p>Vnitřní jednotka klimatizace v každé obytné místnosti je součástí standardu.</p></div></div><div class="uk-width-1-4@m uk-width-1-2"><div class="benefitsBox"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/icons/mdiGarageVariant.svg" alt=""></picture><h3>Garáž v domě</h3><p>22 parkovacích míst v podzemní garáži se zakladači a 2 venkovní stání.</p></div></div><div class="uk-width-1-4@m uk-width-1-2"><div class="benefitsBox"><picture><img loading="lazy" src="/byty-v-zahradach/project/img/icons/mdiSolarPowerVariant.svg" alt=""></picture><h3>Fotovoltaika na střeše</h3><p>Společná fotovoltaika ohřívá teplou vodu pro celý dům a snižuje náklady na bydlení.</p></div></div></div></div></div></section></main> <footer> <section class="footerMain"> <div class="container"> <div class="uk-grid-small" data-uk-grid> <div class="uk-width-1-1 uk-width-1-2@s uk-width-1-4@m"> <a href="/byty-v-zahradach/" class="logo" title="Byty v zahradách"><img class="bvzLogoImg" src="/byty-v-zahradach/project/img/logo/logo-light.svg" alt="Byty v zahradách" width="266" height="58"></a> <div class="officeAddress"><p class="officeAddress__label">Developer</p><p class="address">HICH Holding s.r.o.<br>Západní 365/11, 162 00 Praha 6<br>IČO 07396708</p></div>  </div> <div class="uk-width-1-2 uk-width-1-4@m"> <div class="footerNav"> <h3>Navigace</h3> <ul class="menu"><li><a href="/byty-v-zahradach/nabidka-nemovitosti/" title="Výběr bytů">Výběr bytů</a></li><li><a href="/byty-v-zahradach/o-projektu/" title="O projektu">O projektu</a></li><li><a href="/byty-v-zahradach/standardy/" title="Standardy">Standardy</a></li><li><a href="/byty-v-zahradach/lokalita/" title="Lokalita">Lokalita</a></li><li><a href="/byty-v-zahradach/aktuality/" title="Aktuality">Aktuality</a></li><li><a href="/byty-v-zahradach/kontakty/" title="Kontakt">Kontakt</a></li></ul> </div> </div> <div class="uk-width-1-2 uk-width-1-4@m"> <div class="footerTools"><h3>Projekt</h3><ul><li>Engelmüllerova</li><li>163 00 Praha – Řepy</li><li>34 bytů · 4 podlaží</li></ul></div> </div> <div class="uk-width-1-1 uk-width-1-2@s uk-width-1-4@m"> <div class="footerContact"><h3>Kontakt</h3><a href="tel:+420776825212" class="contactLink"><span class="ico"><img loading="lazy" src="/byty-v-zahradach/www/Development/images/svg/phone.svg" data-uk-svg alt=""></span><span>+420 776 825 212</span></a><a href="mailto:zraly@profiserv.cz" class="contactLink"><span class="ico"><img loading="lazy" src="/byty-v-zahradach/www/Development/images/svg/email.svg" data-uk-svg alt=""></span><span>zraly@profiserv.cz</span></a><a href="/byty-v-zahradach/nabidka-nemovitosti/" class="button footerCta" title="Výběr bytů"><span>Výběr bytů</span></a></div> </div> </div> </div> </section> <section class="footerEnd"> <div class="container"> <div class="uk-grid-small uk-flex-middle" data-uk-grid> <div class="uk-width-expand@m"> <ul class="menu"> <li> <a href="/byty-v-zahradach/zpracovani-osobnich-udaju/" title="Ochrana osobních údajů">Ochrana osobních údajů</a> </li> </ul> </div> <div class="uk-width-auto@m"> <p class="copy">Copyright &copy; 2026 Byty v zahradách · HICH Holding s.r.o. | by <a href="https://www.impnet.cz/" target="_blank" rel="noopener" title="impnet"><picture><img loading="lazy" src="/byty-v-zahradach/www/Development/images/impnet.png" alt="IMPnet"></picture></a></p> </div> </div> </div> </section> </footer> <div id="snippet-flashMessage-"> <script>
+		$(document).ready(function(){
+			$('*[data-flash-message-modal-show]').each(function(){
+				UIkit.modal($(this)).show();
+			}).on('hidden', function(){
+				$(this).remove();
+			});
+		});
+	</script> </div><div id="snippet-cookieBar-"> <div class="cookie-bar-modal"> <div data-cookie-bar-accordion class="cookie-bar"> <picture class="background-image-left"> <img src="/byty-v-zahradach/www/Development/images/cookieBar/cookie-background-left.png" alt="cookie-bar background"> </picture> <picture class="background-image-right"> <img src="/byty-v-zahradach/www/Development/images/cookieBar/cookie-background-right.png" alt="cookie-bar background"> </picture> <form action="/byty-v-zahradach/dum-a-1-np/" method="post" id="frm-cookieBar-settingsForm" class="ajax"> <div class="first-step"> <div class="content-step"> <div class="left-box"> <div class="left-box-step"> <picture class="logo"> <img src="/byty-v-zahradach/www/Development/images/cookieBar/cookie.svg" alt="cookie logo icon"> </picture> <div class="text"> <p class="main-title">Souhlas se zpracováním dat</p> <h3>Tato stránka používá cookies</h3> <p>Potřebujeme váš souhlas, abychom mohli vyhodnocovat návštěvnost a zobrazovat relevantní obsah. Vaše nastavení můžete kdykoliv změnit.</p> <div class="setting"> <p data-cookie-bar-accordion-toggle> <img src="/byty-v-zahradach/www/Development/images/cookieBar/arrow.svg" alt="arrow icon"> <span id="cookie-bar-settings">Nastavit</span> </p> </div> </div> </div> <div class="second-step"> <div class="text"> <p>Upravte si zpracování dle vlastních preferencí</p> </div> <div data-cookie-bar-accordion class="row-check"> <div class="row-label"> <span data-cookie-bar-accordion-toggle> <img src="/byty-v-zahradach/www/Development/images/cookieBar/arrow.svg" alt="accordion icon"> <strong>Technické a bezpečnostní</strong> </span> <label> <input type="checkbox" name="data[technical]" id="frm-cookieBar-settingsForm-data-technical" disabled checked> <span class="indicator"> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/checked.svg" alt="checked icon"> </span> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/unchecked.svg" alt="unchecked icon"> </span> </span> </label> </div> <span> Jsou nezbytné pro zajištění základních funkcí stránek a pro správný provoz webu. Z toho důvodu jsou povinné a nelze je vypnout. </span> </div> <div data-cookie-bar-accordion class="row-check"> <div class="row-label"> <span data-cookie-bar-accordion-toggle> <img src="/byty-v-zahradach/www/Development/images/cookieBar/arrow.svg" alt="accordion icon"> <strong>Funkční</strong> </span> <label> <input type="checkbox" name="data[operational]" id="frm-cookieBar-settingsForm-data-operational"> <span class="indicator"> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/checked.svg" alt="checked icon"> </span> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/unchecked.svg" alt="unchecked icon"> </span> </span> </label> </div> <span> Tato data poskytují pokročilejší funkce, jako je zapamatování přihlašovacích údajů, jazykových preferencí, země nebo nákupního košíku. Díky tomu nemusíte při každé další návštěvě nastavovat své preference. Tato data neshromažďují informace, které by mohly identifikovat uživatele. <div> </div> </span> </div> <div data-cookie-bar-accordion class="row-check"> <div class="row-label"> <span data-cookie-bar-accordion-toggle> <img src="/byty-v-zahradach/www/Development/images/cookieBar/arrow.svg" alt="accordion icon"> <strong>Personalizované a reklamní</strong> </span> <label> <input type="checkbox" name="data[marketing]" id="frm-cookieBar-settingsForm-data-marketing"> <span class="indicator"> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/checked.svg" alt="checked icon"> </span> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/unchecked.svg" alt="unchecked icon"> </span> </span> </label> </div> <span> Tato data mohou sloužit k zaznamenávání vašeho chování nebo preferencí, vyjádřených při návštěvě webu. Díky nim je možné zobrazovat vám obsah, který odpovídá vašim zájmům a relevantní reklamy na jiných stránkách. Tato data můžeme prostřednictvím našich stránek nastavit my nebo naši reklamní partneři. Jsou založeny na identifikaci vašeho prohlížeče a zařízení. Pokud tato data nepovolíte, zobrazovaná reklama nemusí odpovídat vašim zájmům. Nastavují souhlas s personalizovanou reklamou. <div> </div> </span> </div> <div data-cookie-bar-accordion class="row-check"> <div class="row-label"> <span data-cookie-bar-accordion-toggle> <img src="/byty-v-zahradach/www/Development/images/cookieBar/arrow.svg" alt="accordion icon"> <strong>Analytické</strong> </span> <label> <input type="checkbox" name="data[analytic]" id="frm-cookieBar-settingsForm-data-analytic"> <span class="indicator"> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/checked.svg" alt="checked icon"> </span> <span> <img src="/byty-v-zahradach/www/Development/images/cookieBar/unchecked.svg" alt="unchecked icon"> </span> </span> </label> </div> <span> Tato data nám umožňují počítat návštěvy a zdroje návštěvnosti, abychom mohli měřit a zlepšovat výkon našich stránek. Pomáhají nám zjistit, které stránky jsou nejoblíbenější a které nejméně, a zjistit, jak se návštěvníci na webu pohybují. To nám umožňuje zlepšovat funkce a prostředí našeho webu. <div> </div> </span> </div> </div> </div> <div class="right-box"> <div class="row"> <div class="green-button"> <input type="submit" name="enableAll" value="Přijmout vše"> <img src="/byty-v-zahradach/www/Development/images/cookieBar/checkmark.svg" alt="checkmark icon"> </div> </div> <div class="row button-secondary-wrap"> <input type="submit" name="_submit" value="Souhlasím s vybranými" class="button-secondary"> </div> <div class="row"> <p class="disabletext">Souhlas můžete odmítnout <input type="submit" name="disableAll" value="Pouze nezbytné"></p> </div> </div> </div> </div> <input type="hidden" name="_do" value="cookieBar-settingsForm-submit"></form> </div> </div> </div><div id="snippet-popup-"> <script>
+		$(document).ready(function(){
+			$('*[data-popup-modal-show]').each(function(){
+				let id = $(this).data('id');
+				let time = $(this).data('show-time');
+				let modal = $(this);
+				let showBeforeLeaving = $(this).data('show-before-leaving');
+				let timer = setTimeout(() => {UIkit.modal(modal).show();}, time * 1000);
+
+				if(showBeforeLeaving) {
+					$(document).on('mouseleave.popup-' + id, function(){
+						UIkit.modal(modal).show();
+					});
+				}
+
+				modal.on('beforeshow', function(){
+					clearTimeout(timer);
+					$(document).off('mouseleave.popup-' + id);
+				});
+
+				modal.on('hidden', function(){
+					modal.remove();
+					$.nette.ajax({
+						data: {"popup-id": id},
+						url: "/dum-a-1-np?do=popup-viewed",
+					});
+				});
+			});
+		});
+	</script> </div> <div id="snippet-regulatoryNotice-"> <script>
+		$(document).ready(function(){
+			$('*[data-regulatory-notice-modal]').each(function(){
+				let modal = $(this);
+				let id = modal.data('id');
+
+				// Zobraz modal okamžitě
+				UIkit.modal(modal).show();
+
+				// Tlačítko pro přijetí
+				modal.find('.regulatory-notice-accept').on('click', function(){
+					$.nette.ajax({
+						data: {"regulatoryNotice-id": id},
+						url: "/dum-a-1-np?do=regulatoryNotice-accept",
+						complete: function() {
+							UIkit.modal(modal).hide();
+							modal.remove();
+						}
+					});
+				});
+
+				// Tlačítko pro odmítnutí
+				modal.find('.regulatory-notice-reject').on('click', function(){
+					let redirectUrl = $(this).data('redirect');
+
+					$.nette.ajax({
+						data: {"regulatoryNotice-id": id},
+						url: "/dum-a-1-np?do=regulatoryNotice-reject",
+						complete: function() {
+							UIkit.modal(modal).hide();
+							modal.remove();
+
+							if (redirectUrl) {
+								window.location.href = redirectUrl;
+							}
+						}
+					});
+				});
+			});
+		});
+	</script> </div>  <script src="/byty-v-zahradach/project/project.js" defer></script></body> </html>

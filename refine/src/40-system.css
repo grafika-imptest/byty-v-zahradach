@@ -1,0 +1,272 @@
+/* =====================================================================
+   40 · Design systém — tlačítka, nadpisy, nadtitulky, rytmus sekcí,
+   pás výhod, karty, fokus, cookie lišta
+   ===================================================================== */
+
+/* --- Tlačítka ------------------------------------------------------------
+   Hover primárního tlačítka měnil pozadí na #e9f6f0 se zeleným textem
+   (kontrast ~1.9:1) — tlačítko vypadalo jako sekundární nebo vypnuté
+   a na mátovém pásu splynulo s pozadím. Teď jeden hover pro všechna
+   plná zelená tlačítka: tmavší zelená šablony (#2e9a66) a bílý text,
+   stejně jako už měla patička (.footerCta). Tvar ani velikost se nemění. */
+.button,
+.uk-button,
+.button-flat {
+	transition:
+		background-color var(--rf-dur) var(--rf-ease),
+		border-color var(--rf-dur) var(--rf-ease),
+		color var(--rf-dur) var(--rf-ease),
+		transform 0.08s var(--rf-ease);
+}
+
+.button:not(.second, .transparent, .orange, .danger, .button-flat, .unitDetailButton, .button-secondary):hover,
+.uk-button:not(.second, .transparent, .uk-button-default, .uk-button-text):hover {
+	background: var(--rf-green-dark);
+	border-color: var(--rf-green-dark);
+	color: #fff !important;
+}
+
+/* Textové odkazy, které nesou .button jen kvůli resetu, si nechají svůj hover */
+body .flatCard .cardFoot > a.button:hover {
+	color: var(--rf-green-dark) !important;
+	border-color: transparent;
+}
+
+.button:active,
+.uk-button:active,
+.button-flat:active {
+	transform: translateY(1px);
+}
+
+.button .mdi-chevron-right {
+	transition: transform var(--rf-dur) var(--rf-ease);
+}
+
+.button:hover .mdi-chevron-right {
+	transform: translateX(2px);
+}
+
+/* Letter-spacing v em, ať škáluje s písmem (1.5px byl na 1440 relativně širší) */
+.button,
+.uk-button {
+	letter-spacing: 0.1em;
+}
+
+/* Malé obrysové tlačítko: na 1440 jen 10px tučných verzálek */
+.button-flat,
+.button.button-flat {
+	min-height: 3.6rem;
+	font-size: max(12px, 1.3rem);
+	letter-spacing: 0.06em;
+}
+
+/* --- Nadpisy sekcí H2 -----------------------------------------------------
+   Dřív 7 velikostí (26–50px), dvě váhy a dvě barvy. Teď standard
+   3.4rem / 700 / #000 pro obsahové sekce podstránek. Homepage má vlastní
+   dvě úrovně v 50-home.css. */
+:root {
+	--rf-h2: 3.4rem;
+	--rf-h1-app: 4.4rem;
+}
+
+@media only screen and (max-width: 639px) {
+	:root {
+		--rf-h2: 2.6rem;
+		--rf-h1-app: 3.2rem;
+	}
+}
+
+section.contentPage .container .uk-grid > div .text h2,
+section.videoContent .container .uk-grid > div .text h2,
+section.virtualTour .container .top h2,
+section.otherProjects .top h2,
+section.purchaseSteps .container > h2,
+section.newsList.moreNews .top h2,
+section.vizualize .container .top h2,
+section.unitSlider .container .content > h2,
+section.unitReasons .top h2,
+section.entityContact .container > h2 {
+	font-size: var(--rf-h2);
+	line-height: 1.2;
+	font-weight: 700;
+	color: #000;
+	letter-spacing: -0.005em;
+}
+
+section.purchaseSteps .container > h2,
+section.newsList.moreNews .top h2,
+section.unitSlider .container .content > h2 {
+	margin-bottom: var(--rf-head-gap);
+}
+
+/* --- H1 aplikačních a seznamových stránek: jedna velikost a barva -------- */
+section.projectListTitle .container .text h1,
+section.favouriteTop .container .content > .uk-grid > div .text .title h1,
+section.pageTopPanel.pageTopPanel--plain .container .uk-grid > div .text h1,
+section.pageTopPanel.pageTopPanel--investment .container .uk-grid > div .text h1,
+section.topContact .container .uk-grid > div .text h1 {
+	font-size: var(--rf-h1-app);
+	line-height: 1.15;
+	font-weight: 600;
+	color: #000;
+	letter-spacing: -0.01em;
+}
+
+/* --- Nadtitulky (eyebrow) ---------------------------------------------------
+   Odstup od nadpisu dával jen line-height (na 1440 ~4px) → vlastní mezera;
+   prostrkání v em. Velikost a barva beze změny. */
+:is(section.contentPage .container .uk-grid > div .text,
+	section.videoContent .container .uk-grid > div .text,
+	section.pageTopPanel .container .uk-grid > div .text,
+	section.homepageInteractive .container .uk-grid > div .content .text,
+	section.newsExtract .container .content .top .text,
+	section.homepageGallery .container .galleryColumn .galleryColumn__heading,
+	section.vizualize .container .top,
+	section.dispositionShowcase .top,
+	section.virtualTour .container .top,
+	section.otherProjects .top,
+	section.projectListTitle .container .text,
+	section.unitSlider .container .content,
+	section.topContact .container .uk-grid > div .text) > .subtitle {
+	line-height: 1.5;
+	letter-spacing: 0.1em;
+	margin-bottom: 1rem;
+}
+
+section.purchaseSteps .container > .subtitle {
+	letter-spacing: 0.1em;
+	margin-bottom: 1rem;
+}
+
+/* Nabídka (nejdůležitější stránka) měla jiný eyebrow (600 / 1px / mb 5px) */
+section.projectListTitle .container .text .subtitle {
+	font-weight: 700;
+}
+
+section.unitReasons .top .subtitle {
+	font-size: max(12px, 1.3rem);
+	letter-spacing: 0.1em;
+}
+
+/* --- Rytmus sekcí podstránek ------------------------------------------------
+   Mezery mezi sekcemi skákaly 50–229px (rem i px). Jedna škála tokenů:
+   --rf-section-y mezi typy sekcí, menší mezi navazujícími bloky obsahu. */
+section.contentPage {
+	padding: var(--rf-section-y-sm) 0;
+}
+
+section.pageTopPanel + section.contentPage,
+section.pageTopPanel + script + section.contentPage {
+	padding-top: var(--rf-section-y);
+}
+
+section.videoContent {
+	padding: var(--rf-section-y-sm) 0;
+}
+
+section.purchaseSteps,
+section.virtualTour,
+section.otherProjects,
+section.newsList.moreNews,
+section.unitSlider,
+section.faqPack,
+section.mapContent {
+	padding-top: var(--rf-section-y);
+	padding-bottom: var(--rf-section-y);
+}
+
+body:not(.frontend-homepage) section.vizualize {
+	padding-top: var(--rf-section-y);
+}
+
+/* --- Pás výhod (na 17 stránkách) -------------------------------------------- */
+.frontend-page section.benefits,
+.frontend-news section.benefits,
+.frontend-faq section.benefits,
+.frontend-newslist section.benefits {
+	margin-bottom: 0;
+}
+
+body section.benefits .container .content {
+	padding: calc(var(--rf-section-y-sm) + 3rem) var(--rf-gutter) var(--rf-section-y);
+}
+
+section.benefits .container .content .uk-grid {
+	row-gap: 4rem;
+}
+
+body section.benefits .container .content .uk-grid > div .benefitsBox h3 {
+	color: #000;
+}
+
+body section.benefits .container .content .uk-grid > div .benefitsBox p {
+	font-size: max(14px, 1.5rem);
+	line-height: 1.6;
+}
+
+/* --- Karty a panely: rádius 16px jako fotky šablony, střídmé stíny -------- */
+section.otherProjects .projectCard {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	box-shadow: var(--rf-shadow-sm);
+}
+
+section.otherProjects .projectCard-body {
+	box-shadow: none;
+}
+
+section.mapContent .legend {
+	border-radius: var(--rf-radius);
+	box-shadow: var(--rf-shadow-md);
+}
+
+section.faqPack .faqList {
+	border-radius: var(--rf-radius);
+}
+
+/* --- Pole formulářů: viditelný fokus (bundle outline rušil bez náhrady) ---- */
+.form-label fieldset input:focus,
+.form-label fieldset textarea:focus,
+.form-label fieldset select:focus,
+.select2-container--default.select2-container--focus .select2-selection {
+	border-color: var(--rf-green) !important;
+	box-shadow: 0 0 0 3px rgb(66 199 135 / 0.22);
+	outline: 0;
+}
+
+.newFilter .filterButton button:focus-visible,
+.filterPackContent .labels p button:focus-visible,
+.filterPackContent .mark .markPack button:focus-visible,
+.filterPackContent .reset:focus-visible {
+	outline: 2px solid var(--rf-green);
+	outline-offset: 2px;
+}
+
+section.footerMain a:focus-visible,
+section.footerEnd a:focus-visible,
+section.form .button:focus-visible {
+	outline-color: #fff;
+}
+
+/* --- Cookie lišta: tvar a stavy podle tokenů (texty a logika beze změny) --- */
+.cookie-bar {
+	border-radius: var(--rf-radius-lg) var(--rf-radius-lg) 0 0;
+	box-shadow: 0 -2px 4px rgb(16 32 24 / 0.04), 0 -14px 32px -14px rgb(16 32 24 / 0.2);
+}
+
+.cookie-bar form .row .green-button,
+.cookie-bar form .row-end .button-green {
+	border-radius: var(--rf-radius);
+	overflow: hidden;
+	transition: filter var(--rf-dur) var(--rf-ease);
+}
+
+.cookie-bar form .row .green-button:hover,
+.cookie-bar form .row-end .button-green:hover {
+	filter: brightness(0.92);
+}
+
+.cookie-bar form .row .button-secondary,
+.cookie-bar form .row-end .button {
+	border-radius: var(--rf-radius);
+}

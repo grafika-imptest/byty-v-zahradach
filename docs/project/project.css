@@ -1,0 +1,187 @@
+/* Byty v zahradách — vrstva projektu nad upravenou šablonou Brave Development.
+   Barevnost z vizualizací: zeleň zahrad, antracit RAL 7016 (okna, žaluzie), teplá bílá omítka. */
+:root {
+	--rf-green: #617952;
+	--rf-green-dark: #4d6141;
+	--rf-green-soft: #eef1e8;
+	--rf-green-ink: #566c48;
+	--rf-on-green: #fff;
+	--rf-ink-2: #45484f;
+	--bvz-anthracite: #45484f;
+	--bvz-sand: #a39d92;
+	--bvz-warm: #f6f4ef;
+	--bvz-sun: #c99a4b;
+}
+
+/* --- Textové logo (logo projektu není součástí zakázky) --------------------- */
+.bvzLogo { display: inline-flex; align-items: center; gap: 10px; color: var(--bvz-anthracite); text-decoration: none; line-height: 1; }
+.bvzLogo__mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--rf-green); color: #fff; flex: none; }
+.bvzLogo__mark svg { width: 26px; height: 26px; }
+.bvzLogo__text { display: grid; gap: 4px; }
+.bvzLogo__text strong { font: 600 1.9rem/1 Urbanist, sans-serif; letter-spacing: -0.01em; white-space: nowrap; }
+.bvzLogo__text small { font: 500 1.15rem/1 Urbanist, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6f72; white-space: nowrap; }
+.bvzLogo--light { color: #fff; }
+.bvzLogo--light .bvzLogo__text small { color: rgb(255 255 255 / 0.7); }
+a.logo { display: inline-flex !important; align-items: center; }
+
+@media (max-width: 479px) {
+	.bvzLogo__mark { width: 34px; height: 34px; border-radius: 9px; }
+	.bvzLogo__mark svg { width: 22px; height: 22px; }
+	.bvzLogo__text strong { font-size: 1.6rem; }
+	.bvzLogo__text small { font-size: 1rem; }
+}
+.addressCard .logo, .colleagueBox .companyLogo { display: block; margin-bottom: 12px; }
+
+/* --- Úvod: střídání vizualizací (dočasně, dokud nebude video) -------------- */
+section.panoramaHero.rfSlideHero { background: var(--bvz-anthracite); }
+.rfSlides { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.rfSlide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease; transform: scale(1.04); }
+.rfSlide.is-active { opacity: 1; animation: bvzKen 9s ease-out both; }
+@keyframes bvzKen { from { transform: scale(1.08); } to { transform: scale(1.0); } }
+@media (prefers-reduced-motion: reduce) { .rfSlide.is-active { animation: none; transform: none; } }
+.rfSlideHero .rfVideoHero__shade { background: linear-gradient(90deg, rgb(20 24 22 / 0.55), rgb(20 24 22 / 0.15) 55%, transparent), linear-gradient(0deg, rgb(20 24 22 / 0.45), transparent 45%); }
+.rfSlideDots { position: absolute; z-index: 45; left: var(--rf-gutter); bottom: 28px; display: flex; gap: 8px; }
+.rfSlideDots button { width: 32px; height: 4px; padding: 0; border: 0; border-radius: 2px; background: rgb(255 255 255 / 0.45); cursor: pointer; }
+.rfSlideDots button.is-active { background: #fff; }
+.rfSlideDots button::after { content: ""; display: block; height: 24px; margin-top: -10px; }
+@media (max-width: 639px) { .rfSlideDots { bottom: 16px; } }
+
+/* --- Ceny na vyžádání, štítky -------------------------------------------- */
+.rfPriceOnRequest { font-weight: 500 !important; color: var(--bvz-anthracite) !important; }
+.flatCard .top { display: flex; gap: 6px; flex-wrap: wrap; }
+.flatCard .top .rfTag { background: var(--bvz-sun) !important; color: #1d1a14 !important; }
+.rfPlanPic { background: #fff; }
+.rfPlanPic img { object-fit: contain !important; }
+.heroGallery .rfPlanMain { background: #fff; border: 1px solid var(--rf-line); }
+.heroGallery .rfPlanMain img { object-fit: contain !important; }
+.rfNote { margin-top: 18px; font-size: 1.35rem; line-height: 1.5; color: #666; }
+
+/* --- Standardy ------------------------------------------------------------ */
+section.rfStandards { padding: var(--rf-section-y) 0; background: var(--bvz-warm); }
+.rfStandards .top { margin-bottom: var(--rf-head-gap); }
+.rfStandards .top .subtitle, .rfPois .top .subtitle { margin: 0 0 8px; font: 700 1.3rem/1.3 Urbanist, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rf-green-ink); }
+.rfStandards .top h2, .rfPois .top h2 { margin: 0; }
+.rfStandards__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.rfStandard { padding: 24px; border-radius: var(--rf-radius-lg); background: #fff; box-shadow: var(--rf-shadow-sm); }
+.rfStandard .mdi { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--rf-green-soft); color: var(--rf-green-ink); font-size: 2.4rem; }
+.rfStandard h3 { margin: 16px 0 8px; font: 600 1.7rem/1.3 Urbanist, sans-serif; color: var(--bvz-anthracite); }
+.rfStandard p { margin: 0; font-size: 1.45rem; line-height: 1.6; color: #555; }
+
+/* --- Lokalita: vzdálenosti ------------------------------------------------- */
+section.rfPois { padding: var(--rf-section-y) 0 0; }
+.rfPois .top { margin-bottom: var(--rf-head-gap); }
+.rfPois__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px 32px; }
+.rfPois__col h3 { margin: 0 0 10px; font: 600 1.6rem/1.3 Urbanist, sans-serif; color: var(--bvz-anthracite); }
+.rfPois__col ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rf-line); }
+.rfPois__col li { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--rf-line); font-size: 1.45rem; }
+.rfPois__col li .mdi { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--rf-green); color: #fff; font-size: 1.8rem; }
+.rfPois__col li small { display: block; color: #666; font-size: 1.2rem; }
+.rfPois__col li b { font-weight: 600; color: var(--rf-green-ink); white-space: nowrap; }
+
+/* --- Výběr bytů: filtr ---------------------------------------------------- */
+.rfFilter { display: grid; gap: 18px; margin-bottom: 24px; }
+.rfFilter__group { display: grid; gap: 8px; }
+.rfFilter__label { margin: 0; font: 600 1.25rem/1.3 Urbanist, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
+.rfFilter__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rfChip { min-height: 40px; padding: 0 14px; border: 1px solid var(--rf-line-strong); border-radius: 999px; background: #fff; color: var(--bvz-anthracite); font: 500 1.4rem/1 Urbanist, sans-serif; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.rfChip:hover { border-color: var(--rf-green); }
+.rfChip[aria-pressed="true"] { background: var(--rf-green); border-color: var(--rf-green); color: #fff; }
+.rfChip:focus-visible { outline: 2px solid var(--rf-green); outline-offset: 2px; }
+.rfFilter__reset { justify-self: start; padding: 0; border: 0; background: none; color: var(--rf-green-ink); font: 500 1.35rem/1.4 Urbanist, sans-serif; text-decoration: underline; cursor: pointer; }
+.rfFloorLinks { display: grid; gap: 6px; margin-bottom: 24px; }
+.rfFloorLinks a { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--rf-radius); background: var(--bvz-warm); color: var(--bvz-anthracite); text-decoration: none; font: 500 1.45rem/1 Urbanist, sans-serif; }
+.rfFloorLinks a small { color: #666; font-size: 1.25rem; }
+.rfFloorLinks a:hover { background: var(--rf-green-soft); }
+.rfEmpty { padding: 32px 0; font-size: 1.5rem; }
+.unitsGrid > [hidden] { display: none !important; }
+@media (max-width: 959px) {
+	.rfFilter { grid-template-columns: 1fr 1fr; }
+	.rfFloorLinks { grid-template-columns: repeat(4, 1fr); }
+	.rfFloorLinks a { grid-template-columns: 1fr; justify-items: center; padding: 8px; text-align: center; }
+	.rfFloorLinks a small, .rfFloorLinks a .mdi { display: none; }
+}
+
+/* --- Aktuality, kontakt ---------------------------------------------------- */
+.rfNewsGrid { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 959px) { .rfNewsGrid { grid-template-columns: 1fr; } }
+.newsExtract__more { margin-top: 32px; text-align: center; }
+.rfArticleGallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin: 24px 0; }
+.rfArticleGallery img { width: 100%; height: 220px; object-fit: cover; border-radius: var(--rf-radius); }
+.rfAvatar { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: var(--rf-green); color: #fff; font: 600 3rem/1 Urbanist, sans-serif; flex: none; }
+section.topContact .entityBox .rfAvatar { margin: 0 24px 0 0; }
+section.topContact .entityBox { display: flex; align-items: center; }
+.rfSimilar .top { margin-bottom: var(--rf-head-gap); }
+.rfSimilar { padding-bottom: var(--rf-section-y); }
+
+/* --- Plovoucí kontakt: na úvodu vpravo, jinde také --------------------------- */
+.dispositionShowcase .building .stats .price strong { white-space: nowrap; }
+
+section.topBar a.logo { max-width: none !important; width: auto !important; flex: none; }
+section.topBar .uk-width-auto:has(> a.logo) { flex: none; }
+
+section.rfSimilar .unitsGrid { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 24px; margin: 0 !important; }
+.rfSimilar .unitsGrid > div { width: auto !important; padding: 0 !important; margin: 0 !important; }
+@media (max-width: 1199px) { section.rfSimilar .unitsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+@media (max-width: 479px) { section.rfSimilar .unitsGrid { grid-template-columns: 1fr !important; } }
+.colleagueBox .companyLogo { width: auto !important; max-width: none !important; height: auto !important; overflow: visible !important; }
+.heroGallery .thumbs a:first-child { background: #fff; }
+.heroGallery .thumbs a:first-child img { object-fit: contain !important; }
+
+/* Formulářové sekce: závoj v zeleni projektu */
+html.rf-on section.brokerOffer::before,
+html.rf-on section.form::before { background-color: #2f4321 !important; opacity: 0.92 !important; }
+section.form .content .rfFormViz img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--rf-radius-lg); }
+
+/* Patička: čitelnost na antracitu */
+section.footerMain .officeAddress__label { color: var(--bvz-sand) !important; }
+section.footerMain .footerTools ul li { color: rgb(255 255 255 / 0.8) !important; }
+
+/* Nadpisy vlastních sekcí jako ostatní nadpisy šablony */
+.rfStandards .top h2, .rfPois .top h2, .rfSimilar .top h2 { font: 600 3.75rem/1.18 Urbanist, sans-serif; letter-spacing: -0.01em; color: var(--rf-ink, #000); }
+@media (max-width: 639px) { .rfStandards .top h2, .rfPois .top h2, .rfSimilar .top h2 { font-size: 2.8rem; } }
+/* aktuality: fotky ze stavby mají různé poměry stran */
+.pageConBox picture img, .newsExtractCard picture img { width: 100%; aspect-ratio: 4 / 3; height: auto !important; object-fit: cover; }
+
+/* Filtr: tlačítka stejného tvaru (šablona přebíjí styly <button>) */
+.rfFilter .rfChip { display: inline-flex !important; align-items: center; justify-content: center; height: 38px !important; min-height: 0 !important; min-width: 0 !important; width: auto !important; padding: 0 14px !important; margin: 0 !important; border-radius: 999px !important; line-height: 1 !important; box-shadow: none !important; }
+@media (max-width: 959px) {
+	.rfFilter { grid-template-columns: 1fr; gap: 14px; }
+	.rfFloorLinks { display: none; } /* podlaží řeší filtr i vizualizace domu */
+}
+/* Aktuality na úvodu: na mobilu pod sebou */
+@media (max-width: 959px) { section.newsExtract .rfNewsGrid { grid-template-columns: 1fr !important; } }
+/* Vizualizace domu na mobilu: posuvník nepřetéká stránku */
+html.rf-on section.vizualize { overflow-x: clip; }
+
+/* Pulzující obrys: silueta domu (polygon z tools/project.mjs) místo obdélníku */
+html.rf-on .rfHouseOutline polygon { fill: rgb(97 121 82 / 0.14); stroke: var(--rf-green); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; animation: rfHousePulse 2.4s ease-in-out infinite; transition: opacity .4s ease; }
+html.rf-on .maping.rf-touched .rfHouseOutline polygon { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { html.rf-on .rfHouseOutline polygon { animation: none; } }
+
+/* --- Logo projektu (SVG klienta) ------------------------------------------- */
+a.logo .bvzLogoImg { display: block !important; width: auto !important; height: 46px !important; max-width: none !important; object-fit: contain; }
+section.footerMain a.logo .bvzLogoImg { height: 50px !important; }
+@media (max-width: 479px) { section.topBar a.logo .bvzLogoImg { height: 36px !important; } }
+.colleagueBox .companyLogo .bvzLogoImg, .addressCard .logo .bvzLogoImg { display: block; height: 34px; width: auto; }
+
+/* --- Písma: nadpisy Fraunces Regular, ostatní Urbanist ---------------------- */
+html.rf-on body { font-family: 'Urbanist', system-ui, sans-serif; }
+html.rf-on :is(h1, h2, h3, .h1, .h2),
+html.rf-on section.panoramaHero .panoramaHero__copy h1,
+html.rf-on .homehover-content h2,
+html.rf-on .qtipBox-headerPart .name,
+html.rf-on .reason__value {
+	font-family: 'Fraunces', Georgia, serif !important;
+	font-weight: 400 !important;
+	letter-spacing: -0.01em !important;
+	text-transform: none !important;
+}
+html.rf-on h1 span, html.rf-on h2 span { font-family: inherit !important; font-weight: 400 !important; }
+/* drobné nadpisy v patičce a štítky zůstávají v Urbanist (velká písmena) */
+html.rf-on section.footerMain h3, html.rf-on .rfPois__col h3 { font-family: 'Urbanist', sans-serif !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; font-size: 1.3rem; }
+html.rf-on .rfPois__col h3 { text-transform: none !important; letter-spacing: 0 !important; font-size: 1.7rem; }
+
+/* Logo v hlavičce: šablona dává .logo pevnou výšku 5.9rem a overflow:hidden → ořez */
+section.topBar .container .uk-grid > div a.logo { height: auto !important; max-height: none !important; overflow: visible !important; margin-top: 0 !important; padding: 4px 0; }
+section.topBar .container .uk-grid > div a.logo .bvzLogoImg { height: 46px !important; }
+@media (max-width: 479px) { section.topBar .container .uk-grid > div a.logo .bvzLogoImg { height: 36px !important; } }

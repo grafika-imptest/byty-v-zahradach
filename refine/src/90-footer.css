@@ -1,0 +1,87 @@
+/* =====================================================================
+   90 · Patička
+   Struktura a barvy beze změny. Oprava os a drobné typografie:
+   první sloupec byl odsazený 64px (logo mimo hranu obsahu),
+   na mobilu zase o 15px před hranou (záporný okraj UIkit gridu).
+   ===================================================================== */
+
+section.footerMain {
+	padding: clamp(48px, 5vw, 88px) 0 clamp(40px, 4vw, 64px);
+}
+
+section.footerMain .container > .uk-grid > div:first-child {
+	padding-left: 15px;
+}
+
+@media only screen and (max-width: 1199px) {
+	section.footerMain .container > .uk-grid > div:first-child {
+		padding-left: 15px;
+	}
+}
+
+@media only screen and (max-width: 959px) {
+	section.footerMain .container > .uk-grid > div:first-child {
+		padding-left: 15px;
+	}
+}
+
+section.footerMain .logo {
+	max-width: 19rem;
+}
+
+/* Nadpisy sloupců: drobné verzálky s prostrkáním jako jinde na webu */
+section.footerMain h3 {
+	font-size: max(1.2rem, 11px);
+	letter-spacing: 0.12em;
+	color: rgb(255 255 255 / 0.92);
+	margin-bottom: 2rem;
+}
+
+section.footerMain .footerNav ul a,
+section.footerMain .footerTools ul a,
+section.footerMain .footerContact .contactLink {
+	font-size: max(1.5rem, 14px);
+	transition: color var(--rf-dur) var(--rf-ease);
+}
+
+section.footerMain .footerNav ul a:hover,
+section.footerMain .footerTools ul a:hover {
+	color: #fff;
+}
+
+section.footerMain .address {
+	font-size: max(1.5rem, 14px);
+}
+
+section.footerMain .officeAddress__label {
+	font-size: max(1.2rem, 11px);
+}
+
+section.footerMain .socialPack a {
+	width: 4.4rem;
+	height: 4.4rem;
+	min-width: 40px;
+	min-height: 40px;
+}
+
+section.footerMain .footerContact .footerCta {
+	min-height: 4.4rem;
+	letter-spacing: 0.06em;
+}
+
+/* Spodní lišta: jemná dělicí linka místo druhého odstínu jako jediného předělu */
+section.footerEnd {
+	padding: 1.8rem 0;
+	border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+section.footerEnd .container .uk-grid > div .menu li a,
+section.footerEnd .container .uk-grid > div .copy {
+	font-size: max(1.2rem, 11.5px);
+}
+
+@media only screen and (max-width: 959px) {
+	section.footerMain .container > .uk-grid > div {
+		margin-bottom: 1.6rem;
+	}
+}

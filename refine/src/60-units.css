@@ -1,0 +1,347 @@
+/* =====================================================================
+   60 · Výběr bytů — nabídka (tabulka / dlaždice / půdorysy), podlaží,
+   porovnání, oblíbené. Chování (řazení, hover náhled půdorysu, filtry,
+   snippety) beze změny — mění se zarovnání, hustota a stavy.
+   ===================================================================== */
+
+/* --- Levý panel: šířka nemá růst s širším shellem; jede s hlavičkou --- */
+@media only screen and (min-width: 960px) {
+	.frontend-reounitlist .unitsLayout .layoutGrid {
+		grid-template-columns: clamp(26rem, 22vw, 36rem) minmax(0, 1fr);
+		gap: 24px var(--rf-col-gap);
+	}
+}
+
+.frontend-reounitlist .unitsLayout .layoutGrid > .layoutSide {
+	top: calc(var(--rf-nav-offset) + 1.6rem);
+	max-height: calc(100vh - var(--rf-nav-offset) - 3.2rem);
+	transition: top var(--rf-dur-slow) var(--rf-ease-out), max-height var(--rf-dur-slow) var(--rf-ease-out);
+}
+
+/* Wireframe domu: linka 1.5:1 → čitelná; patra s volnými byty jemně tónovaná */
+body .layoutSide .wireframe .wireframe__building path {
+	stroke: rgb(122 122 122 / 0.62);
+}
+
+body .layoutSide .wireframe .wireframe__level:is([data-floor-state="available"], [data-floor-state="partial"]):not(.is-active) .wireframe__face {
+	fill: rgb(66 199 135 / 0.07);
+}
+
+body .layoutSide .wireframe .wireframe__level[data-wireframe-href]:not(.is-active):hover .wireframe__face {
+	fill: rgb(66 199 135 / 0.22);
+}
+
+/* --- Tabulka jednotek ---------------------------------------------------- */
+/* Jedna šablona sloupců pro hlavičku i řádky (dřív každý řádek vlastní
+   grid s fr bez minmax → hlavička a data posunuté o 7–9px) */
+@media only screen and (min-width: 768px) {
+	.unitsTableSection .unitsTable {
+		--unit-cols: minmax(0, 1.4fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1.1fr) 14rem;
+	}
+
+	.unitsTableSection .unitsTable .tRow {
+		grid-template-columns: var(--unit-cols);
+		column-gap: 1.6rem;
+	}
+
+	/* Hustota: 72–86px na jeden řádek textu → ~53px */
+	.unitsTableSection .unitsTable .tRow:not(.tHead) {
+		min-height: 5.6rem;
+		padding-top: 0.8rem;
+		padding-bottom: 0.8rem;
+	}
+}
+
+@media only screen and (min-width: 768px) and (max-width: 1199px) {
+	.unitsTableSection .unitsTable {
+		--unit-cols: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.1fr) 14rem;
+	}
+}
+
+/* Zarovnání podle typu dat: označení vlevo, kódy na střed, čísla vpravo */
+.unitsTableSection .unitsTable .tRow .cName {
+	text-align: left;
+}
+
+body .unitsTableSection .unitsTable .tRow:not(.tHead) .cName,
+body .unitsTableSection .unitsTable .tHead .cName .unitTableSort {
+	justify-content: flex-start;
+}
+
+.unitsTableSection .unitsTable .tRow :is(.cArea, .cPrice, .cOutdoor, .cTotalArea) {
+	text-align: right;
+}
+
+body .unitsTableSection .unitsTable .tHead :is(.cArea, .cPrice, .cOutdoor, .cTotalArea) .unitTableSort {
+	justify-content: flex-end;
+	text-align: right;
+}
+
+body .unitsTableSection .unitsTable .tHead :is(.cName, .cPrice) {
+	color: var(--rf-muted);
+}
+
+body .unitsTableSection .unitsTable .tRow sup {
+	font-size: 0.62em;
+	line-height: 0;
+}
+
+.unitsTableSection .unitsTable .tRow .cAction {
+	justify-content: flex-end;
+}
+
+.vizualizeHideSlot:empty {
+	display: none;
+}
+
+/* Hlavička tabulky zůstane vidět pod hlavičkou webu */
+.unitsTableSection .unitsTable .tRow.tHead {
+	position: sticky;
+	top: var(--rf-nav-offset);
+	z-index: 3;
+	transition: top var(--rf-dur-slow) var(--rf-ease-out);
+}
+
+/* Hover řádku spouští náhled půdorysu vlevo → má být znatelný */
+.unitsTableSection .unitsTable .tRow:not(.tHead) {
+	transition: background-color var(--rf-dur) var(--rf-ease);
+}
+
+body .unitsTableSection .unitsTable .tRow:not(.tHead):hover {
+	background: #f3faf6;
+}
+
+/* Tlačítko detailu stejně velké jako oblíbené/porovnat a jako poslední akce
+   vpravo — u rezervovaných řádků (bez oblíbené/porovnat) tak sedí ve stejném
+   sloupci jako u ostatních */
+body .unitsTableSection .unitsTable .tRow .cAction .button.unitDetailButton {
+	order: 2;
+	width: 3.6rem;
+	height: 3.6rem;
+	transition: background-color var(--rf-dur) var(--rf-ease), border-color var(--rf-dur) var(--rf-ease);
+}
+
+body .unitsTableSection .unitsTable .tRow:hover .cAction .button.unitDetailButton {
+	background: var(--rf-green);
+	border-color: var(--rf-green);
+}
+
+/* Mobil: 6 sloupců v 378px (cena pod tlačítkem, popisky přes sebe) →
+   dvouřádkový záznam z existujícího souhrnu .cMeta. V hlavičce zůstává
+   řazení podle označení a ceny. */
+@media only screen and (max-width: 767px) {
+	.unitsTableSection .unitsTable .tRow {
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 1.2rem;
+	}
+
+	.unitsTableSection .unitsTable .tRow.tHead {
+		grid-template-areas: "name price";
+		position: static;
+	}
+
+	.unitsTableSection .unitsTable .tRow.tHead > :not(.cName, .cPrice) {
+		display: none;
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) {
+		grid-template-areas: "name price" "meta action";
+		row-gap: 0.4rem;
+		padding: 1.2rem 0.4rem;
+		min-height: 0;
+		font-size: 13px;
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) :is(.cBuilding, .cFloor, .cOrientace, .cDispo, .cArea, .cOutdoor, .cTotalArea) {
+		display: none;
+	}
+
+	body .unitsTableSection .unitsTable .tRow .cName {
+		grid-area: name;
+		justify-content: flex-start;
+	}
+
+	body .unitsTableSection .unitsTable .tRow .cPrice {
+		grid-area: price;
+		text-align: right;
+		justify-content: flex-end;
+	}
+
+	body .unitsTableSection .unitsTable .tRow:not(.tHead) :is(.cName, .cPrice) {
+		font-size: 15px;
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) .cMeta {
+		display: block;
+		grid-area: meta;
+		align-self: center;
+		text-align: left;
+		font-size: 13px;
+		line-height: 1.4;
+		color: var(--rf-muted);
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) .cAction {
+		grid-area: action;
+		grid-column: auto;
+		justify-content: flex-end;
+		gap: 0.8rem;
+	}
+
+	.unitsTableSection .unitsTable .tRow .cAction :is(.favourite, .comparator),
+	body .unitsTableSection .unitsTable .tRow .cAction .button.unitDetailButton {
+		width: 40px;
+		height: 40px;
+	}
+}
+
+/* --- Mřížka karet (Dlaždice, Půdorysy, karty na podlaží) ---------------
+   .unitsGrid{margin:auto} rušil záporný okraj UIkit gridu → mřížka
+   posunutá o 15px proti titulku a liště, mezery 15px × 39px */
+.unitsTableSection .unitsGrid.uk-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 3.2rem 2.4rem;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.unitsTableSection .unitsGrid.uk-grid > * {
+	width: auto;
+	padding-left: 0;
+	margin-top: 0;
+}
+
+@media only screen and (min-width: 640px) {
+	.unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media only screen and (min-width: 1200px) {
+	.frontend-reounitlist .unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media only screen and (min-width: 960px) {
+	.frontend-reoprojectpart .unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media only screen and (min-width: 1200px) {
+	.frontend-reoprojectpart .unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+/* Karta: rezervované/prodané byty nemají ikonová tlačítka → řádek
+   nesmí být nižší, jinak nesedí název a cena se sousedy */
+body .flatCard .title {
+	grid-template-rows: minmax(34px, auto) auto;
+}
+
+/* Půdorys (PNG s bílým pozadím) splyne s šedou plochou karty */
+body .flatCard .picture .picture__plan img {
+	mix-blend-mode: multiply;
+}
+
+/* --- Modál filtru -------------------------------------------------------- */
+/* Dráha posuvníku byla natvrdo ~118px (102 000 Kč na pixel) */
+.filterModal .filterGroup.range .Noui {
+	max-width: 56rem;
+}
+
+.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input {
+	grid-template-columns: 15rem minmax(0, 1fr) 15rem;
+	justify-content: stretch;
+	gap: 0 1.6rem;
+}
+
+.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .lower {
+	justify-content: flex-end;
+}
+
+@media only screen and (max-width: 639px) {
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input {
+		grid-template-columns: 1fr 1fr;
+		gap: 0.8rem;
+	}
+
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .lower {
+		justify-content: flex-start;
+	}
+
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .upper {
+		grid-column: 2;
+		grid-row: 1;
+		justify-content: flex-end;
+	}
+
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .sliderTrack {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		margin: 0 0.8rem;
+	}
+
+	.filterModal .sortGroup .pills {
+		flex-wrap: wrap;
+		gap: 7px;
+		border: 0;
+		background: none;
+	}
+
+	.filterModal .sortGroup .pill {
+		border: 1px solid rgb(255 255 255 / 0.22) !important;
+		border-radius: 999px !important;
+	}
+}
+
+/* Živý počet výsledků držet nad patičkou modálu, ne pod okrajem okna */
+.filterModal .filterModal__result {
+	position: sticky;
+	bottom: var(--filter-foot-h, 85px);
+	z-index: 1;
+	margin: 0;
+	padding: 12px 0;
+	background: rgb(20 29 32 / 0.84);
+	backdrop-filter: blur(8px);
+}
+
+/* --- Detail podlaží ------------------------------------------------------ */
+section.floorExtract .container .content .buildingBtn {
+	width: 14rem;
+	min-height: 5.4rem;
+	font-size: max(1.3rem, 12px);
+}
+
+section.floorExtract .container .content .floorBtn {
+	width: 11rem;
+	font-size: max(1.3rem, 12px);
+}
+
+@media only screen and (max-width: 959px) {
+	section.floorExtract .container .content :is(.buildingBtn, .floorBtn) {
+		width: auto;
+	}
+}
+
+/* --- Prázdné stavy Porovnání / Oblíbené: jeden vzor --------------------- */
+section.comparisonSlider .comparisonEmpty h2,
+section.favoriteList .container .content .emptyNote {
+	max-width: 64rem;
+	margin: 0 auto;
+	padding: 3.2rem;
+	border: 1px solid var(--rf-line-strong);
+	border-radius: var(--rf-radius-lg);
+	font: 500 1.8rem/1.5 "Poppins", sans-serif;
+	color: var(--rf-ink-2);
+	text-align: center;
+}
+
+section.comparisonSlider:has(.comparisonEmpty),
+section.favoriteList:has(.emptyNote) {
+	padding: 4.8rem 0;
+}
+

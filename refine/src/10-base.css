@@ -1,0 +1,33 @@
+/* =====================================================================
+   10 · Základ: vykreslení písma, výběr, fokus pro klávesnici
+   ===================================================================== */
+
+body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+::selection {
+	background: rgb(66 199 135 / 0.22);
+	color: inherit;
+}
+
+/* Šablona u tlačítek a odkazů ruší outline bez náhrady — vrátit
+   viditelný fokus jen pro klávesnici (myš nic nového neuvidí). */
+:where(a, button, input, select, textarea, summary, [tabindex], area):focus-visible {
+	outline: 2px solid var(--rf-green);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+:where(.button, .uk-button, .button-main):focus-visible {
+	outline: 2px solid var(--rf-green-dark);
+	outline-offset: 3px;
+}
+
+/* Obrázky v odkazech/kartách: hladké přiblížení při hoveru tam, kde ho
+   šablona používá (scale), ať nepůsobí trhaně */
+img {
+	image-rendering: auto;
+}

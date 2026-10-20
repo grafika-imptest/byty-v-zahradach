@@ -1,0 +1,401 @@
+/* =====================================================================
+   30 · Hlavička
+   Původně dva řádky (utility nahoře, menu dole), 132px na 1440 a 154px
+   na 1920. Teď:
+     ≥1440px     jeden řádek 68–72px: logo · menu · ♡ ⚖ CS · CTA
+     1200–1439px kompaktní dvě patra 88px (tenký pruh utilit nad menu) —
+                 9 položek menu + CTA + utility se do jednoho řádku
+                 nevejdou bez zmenšení písma pod původní velikost
+     <1200px     64/60px: logo · CTA · hamburger
+   Pozice fixed + vlastní JS (brave-refine.js) místo UIkit sticky
+   "show-on-up", který se po scrollu nahoru nevracel. Místo v toku
+   drží <header> výškou --rf-header-h, takže obsah neposkočí.
+   ===================================================================== */
+
+header {
+	position: relative;
+	z-index: 980;
+	height: var(--rf-header-h);
+}
+
+header .uk-sticky-placeholder {
+	display: none !important;
+}
+
+header section.topBar,
+header section.topBar.uk-sticky,
+header section.topBar.uk-sticky-fixed {
+	position: fixed !important;
+	inset: 0 0 auto !important;
+	width: auto !important;
+	z-index: 980;
+	display: flex;
+	align-items: center;
+	height: var(--rf-header-h);
+	padding: 0;
+	margin: 0 !important;
+	background: rgb(255 255 255 / 0.97);
+	box-shadow: 0 1px 0 transparent;
+	transform: translate3d(0, 0, 0);
+	transition:
+		transform var(--rf-dur-slow) var(--rf-ease-out),
+		box-shadow var(--rf-dur) var(--rf-ease),
+		background-color var(--rf-dur) var(--rf-ease);
+	animation: none !important;
+}
+
+html.rf-nav-scrolled header section.topBar {
+	box-shadow: 0 1px 0 var(--rf-line), 0 8px 24px -18px rgb(16 32 24 / 0.35);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+	html.rf-nav-scrolled header section.topBar {
+		background: rgb(255 255 255 / 0.9);
+		backdrop-filter: saturate(1.6) blur(14px);
+	}
+}
+
+html.rf-nav-hidden header section.topBar {
+	transform: translate3d(0, calc(-100% - 2px), 0);
+	box-shadow: none;
+}
+
+/* Obsah hlavičky ve stejném shellu jako stránka — logo lícuje s obsahem */
+header section.topBar > .container {
+	width: 100%;
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	box-sizing: border-box;
+	margin-inline: auto;
+}
+
+header section.topBar .container > .uk-grid {
+	flex-wrap: nowrap;
+	align-items: center;
+	margin-left: 0;
+	gap: 0 clamp(16px, 2vw, 40px);
+}
+
+header section.topBar .container > .uk-grid > * {
+	padding-left: 0;
+}
+
+/* Logo: 59px → 44px (desktop), poměr stran zachován */
+header section.topBar .container .uk-grid > div .logo {
+	height: 4.4rem;
+	max-width: 17.4rem;
+	margin: 0;
+	transition: opacity var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .logo:hover {
+	opacity: 0.8;
+}
+
+header section.topBar .container .uk-grid > div .menuPack {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0 clamp(12px, 1.2vw, 24px);
+	width: auto;
+	margin-left: auto;
+}
+
+header section.topBar .container .uk-grid > div .menuBar {
+	display: contents;
+}
+
+/* --- Desktop (≥1200px, kdy šablona ukazuje plné menu) --------------- */
+@media (min-width: 1200px) {
+	header section.topBar .container .uk-grid > div .menuBar > nav.menu-text {
+		order: 1;
+	}
+
+	header section.topBar .container .uk-grid > div .menuTop {
+		order: 2;
+		gap: 2px;
+		padding: 0 0 0 clamp(10px, 1vw, 20px);
+		margin: 0;
+		border: 0;
+		border-left: 1px solid var(--rf-line);
+		height: 28px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar > nav:not(.menu-text) {
+		order: 3;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text,
+	header section.topBar .container .uk-grid > div .menuBar > nav,
+	header section.topBar .container .uk-grid > div .menuTop {
+		flex-shrink: 0;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar-nav {
+		gap: 0;
+	}
+
+	/* Položky menu: stejné písmo a verzálky, menší prostrkání a rozestupy */
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li {
+		padding: 0 clamp(6px, calc(1.1vw - 9px), 13px);
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li a {
+		font-size: 1.3rem;
+		letter-spacing: clamp(0.04em, calc(0.14vw - 0.11em), 0.1em);
+		white-space: nowrap;
+		padding: 0.8rem 0;
+		min-height: 0;
+		color: #6b6b6b;
+		transition: color var(--rf-dur) var(--rf-ease);
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li a:hover,
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li.uk-active a {
+		color: var(--rf-ink);
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li a::before {
+		bottom: 0.2rem;
+		height: 2px;
+		border-radius: 2px;
+	}
+}
+
+/* --- 1200–1439px: kompaktní dvě patra ---------------------------------- */
+@media (min-width: 1200px) and (max-width: 1439px) {
+	:root {
+		--rf-header-h: 92px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuPack {
+		flex-wrap: wrap;
+		row-gap: 4px;
+		align-content: center;
+	}
+
+	header section.topBar .container .uk-grid > div .menuTop {
+		order: 0;
+		flex: 0 0 100%;
+		justify-content: flex-end;
+		height: 30px;
+		padding: 0 0 4px;
+		border-left: 0;
+		border-bottom: 1px solid var(--rf-line);
+	}
+
+	header section.topBar .container .uk-grid > div .menuTop .menuLink {
+		height: 26px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li:last-child {
+		padding-right: 0;
+	}
+}
+
+/* --- Oblíbené / Porovnání / Jazyk: kompaktní ikonová tlačítka ---------- */
+header section.topBar .container .uk-grid > div .menuTop .menuLink {
+	margin-right: 0;
+	height: 36px;
+	padding: 0 7px;
+	border-radius: var(--rf-radius);
+	gap: 8px;
+	transition: background-color var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink:hover {
+	background: var(--rf-surface-2);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .icon {
+	margin-right: 0;
+	display: inline-flex;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .icon .number {
+	top: -6px;
+	right: -7px;
+	min-width: 16px;
+	width: auto;
+	height: 16px;
+	padding: 0 4px;
+	box-sizing: border-box;
+	border-radius: 999px;
+	font: 600 10px/16px "Poppins", sans-serif;
+	box-shadow: 0 0 0 2px #fff;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .text {
+	font-size: 1.3rem;
+	line-height: 1;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .text::before {
+	display: none;
+}
+
+/* V jednom řádku jen ikona (popisek zůstává pro čtečky, tooltip z title) */
+@media (min-width: 1440px) {
+	header section.topBar .container .uk-grid > div .menuTop .menuLink .text {
+		position: absolute !important;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a {
+	gap: 4px;
+	padding: 0 7px;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a span {
+	font-size: 1.3rem;
+	font-weight: 500;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a span.icon svg {
+	width: 12px;
+	height: 12px;
+	transition: transform var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a[aria-expanded="true"] span.icon svg {
+	transform: rotate(180deg);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher .uk-drop {
+	box-shadow: var(--rf-shadow-md);
+	border: 1px solid var(--rf-line);
+}
+
+/* --- CTA "Volné byty a ceník": 60px → 44px, stejné barvy a rádius ------ */
+header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+	height: 4.4rem;
+	min-height: 4.4rem;
+	padding: 0 2rem;
+	font-size: 1.3rem;
+	letter-spacing: 0.07em;
+	gap: 0.4rem;
+	white-space: nowrap;
+}
+
+header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main .mdi {
+	font-size: 1.6em;
+	line-height: 1;
+	margin-right: -0.4rem;
+	transition: transform var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main:hover .mdi {
+	transform: translateX(2px);
+}
+
+/* --- Tablet a mobil (<1200px): logo · CTA · hamburger ------------------ */
+@media (max-width: 1199px) {
+	header section.topBar .container .uk-grid > div .logo {
+		height: 3.8rem;
+		max-width: 15rem;
+	}
+
+	header section.topBar .container .uk-grid > div .menuPack {
+		gap: 4px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+		height: 40px;
+		min-height: 40px;
+		margin-right: 4px;
+		padding: 0 16px;
+		font-size: 12px;
+		letter-spacing: 0.06em;
+	}
+
+	header section.topBar .uk-navbar-toggle {
+		width: 44px;
+		height: 44px;
+		min-height: 44px;
+		padding: 0;
+		justify-content: center;
+		border-radius: var(--rf-radius);
+		margin-right: -8px;
+	}
+
+	header section.topBar .uk-navbar-toggle:hover,
+	header section.topBar .uk-navbar-toggle:focus-visible {
+		background: var(--rf-surface-2);
+	}
+
+	header section.topBar .uk-navbar-toggle svg {
+		width: 30px;
+		height: 30px;
+	}
+}
+
+@media (max-width: 479px) {
+	header section.topBar .container .uk-grid > div .logo {
+		height: 30px;
+		max-width: 120px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+		height: 36px;
+		min-height: 36px;
+		padding: 0 12px;
+		font-size: 11px;
+		letter-spacing: 0.04em;
+	}
+}
+
+@media (max-width: 359px) {
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+		padding: 0 10px;
+		letter-spacing: 0;
+	}
+}
+
+/* --- Plovoucí kontakt vlevo (desktop) ------------------------------------ */
+/* Vyčnívající část zúžena 6rem → 4.4rem, aby nepřekrývala obsah na hraně shellu */
+.widget a {
+	transform: translateX(calc(-100% + 4.4rem));
+}
+
+.widget a:hover,
+.widget a:focus-visible {
+	transform: translateX(0);
+}
+
+.widget a > span {
+	padding: 1.3rem 1.2rem 1.3rem 2rem;
+	box-shadow: var(--rf-shadow-sm);
+}
+
+/* --- Offcanvas menu (mobil) --------------------------------------------- */
+.uk-offcanvas-bar .uk-offcanvas-close {
+	width: 44px;
+	height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border-radius: var(--rf-radius);
+}
+
+.uk-offcanvas-bar .offcanvasMainNav > li > a {
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid rgb(0 0 0 / 0.06);
+	transition: color var(--rf-dur) var(--rf-ease), padding var(--rf-dur) var(--rf-ease);
+}
+
+.uk-offcanvas-bar .offcanvasMainNav > li > a:hover {
+	padding-left: 6px;
+}
+
+/* Kotvy: cíl nesmí skončit pod viditelnou hlavičkou */
+html {
+	scroll-padding-top: calc(var(--rf-header-h) + 12px);
+}

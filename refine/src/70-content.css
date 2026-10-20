@@ -1,0 +1,256 @@
+/* =====================================================================
+   70 · Obsahové stránky — O projektu, Standardy, Lokalita, Financování,
+   Galerie, O nás, detail místa
+   ===================================================================== */
+
+/* --- Hero podstránek -------------------------------------------------------
+   Textový panel byl posunutý left:33 % s bílou 70 % a ostrými rohy, takže
+   ležel přes zaoblenou fotku (na 1920 přes 203px) a odstavec běžel přes
+   fotku. Text teď ve vlastním sloupci na levé hraně obsahu. */
+@media only screen and (min-width: 960px) {
+	section.pageTopPanel .container .uk-grid > div .text {
+		left: auto;
+		background: none;
+		padding: 0 clamp(32px, 3vw, 64px) 0 0;
+		margin-bottom: clamp(40px, 4vw, 80px);
+	}
+
+	body.frontend-mapmarker section.pageTopPanel .container .uk-grid > div:first-of-type > .text,
+	body.frontend-mapmarker section.pageTopPanel .container .uk-grid > div:first-of-type > .backLink,
+	body.frontend-news section.pageTopPanel .container .uk-grid > div:first-of-type > .text,
+	body.frontend-news section.pageTopPanel .container .uk-grid > div:first-of-type > .backLink {
+		left: auto;
+	}
+}
+
+@media only screen and (max-width: 959px) {
+	section.pageTopPanel .container .uk-grid > div .text {
+		background: none;
+		padding: 0;
+	}
+}
+
+/* Odkaz Zpět (detail místa, článek): bez pevné min-width, na hraně H1 */
+body.frontend-mapmarker section.pageTopPanel .backLink,
+body.frontend-news section.pageTopPanel .backLink {
+	min-width: 0;
+}
+
+/* --- Média v blocích text + obrázek --------------------------------------- */
+/* Fotka a video pod sebou měly různou šířku (+6rem vs 100 %) a pevnou výšku
+   → proměnný poměr stran; YouTube náhled 4:3 ukazoval černé pruhy */
+@media only screen and (min-width: 960px) {
+	section.videoContent .container .uk-grid > div .video.videoFacade {
+		width: calc(100% + 6rem);
+		max-width: none;
+	}
+
+	section.contentPage .container .uk-grid > div > picture {
+		height: auto;
+		aspect-ratio: 924 / 529;
+	}
+}
+
+section.videoContent .container .uk-grid > div .video.videoFacade {
+	height: auto;
+	aspect-ratio: 16 / 9;
+}
+
+section.videoContent .container .uk-grid > div .video iframe {
+	height: auto;
+	aspect-ratio: 16 / 9;
+}
+
+/* Vysoká fotka koláže přetékala o 10px (margin-left + width:100 %) */
+section.contentPage .container .uk-grid > div .picture .uk-grid > div:last-of-type picture {
+	width: calc(100% - 1rem);
+}
+
+@media only screen and (max-width: 639px) {
+	section.contentPage .container .uk-grid > div .picture .uk-grid > div:last-of-type picture {
+		width: 100%;
+	}
+}
+
+/* --- Textový sloupec: optický střed volné plochy, míra 60–66 znaků ------- */
+@media only screen and (min-width: 960px) {
+	section.contentPage .container .uk-grid > div .text,
+	section.videoContent .container .uk-grid > div .text {
+		max-width: 56rem;
+		margin-left: clamp(48px, 5vw, 120px);
+		margin-right: auto;
+	}
+
+	section.contentPage .container .uk-grid > div.uk-flex-first .text {
+		margin-left: auto;
+		margin-right: clamp(48px, 5vw, 120px);
+	}
+
+	section.contentPage .container .uk-grid > div .text p,
+	section.videoContent .container .uk-grid > div .text p {
+		max-width: 64ch;
+	}
+}
+
+/* Mobil/tablet: lokální vnitřní odsazení se sčítalo s okrajem stránky
+   (text o 84px užší než fotka pod ním) */
+@media only screen and (max-width: 959px) {
+	body.frontend-page section.contentPage .container > .uk-grid > div .text,
+	body.frontend-page section.videoContent .container > .uk-grid > div .text {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	body.frontend-page-4 section.calculator > .container > .content {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	section.purchaseSteps > .container,
+	section.otherProjects .top {
+		width: auto;
+	}
+
+	section.virtualTour .container .top {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+/* --- Kroky nákupu ----------------------------------------------------------- */
+/* Nadpis vlevo nad obsahem na střed → společná osa (jako vizualizace) */
+section.purchaseSteps .container > .subtitle,
+section.purchaseSteps .container > h2 {
+	text-align: center;
+}
+
+/* Popis 11.8px tučně na střed → čitelnější řez a velikost */
+section.purchaseSteps .container .steps .step p {
+	font: 500 max(1.5rem, 13px) / 1.55 "Poppins", sans-serif;
+	color: var(--rf-ink-2);
+	max-width: 28rem;
+	margin-inline: auto;
+}
+
+section.purchaseSteps .container .steps .step:not(:last-child)::after {
+	color: #9a9a9a;
+}
+
+/* --- Další projekty (O nás): jeden jemný stín, zaoblení jako média -------- */
+section.otherProjects .projectCard {
+	border-top: 0;
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgb(13 24 31 / 0.06), 0 12px 32px rgb(13 24 31 / 0.08);
+}
+
+section.otherProjects .projectCard-body {
+	box-shadow: none;
+}
+
+section.otherProjects .projectSlider .uk-slider-items {
+	padding: 8px 0 32px;
+}
+
+/* --- Galerie + virtuální prohlídka ---------------------------------------- */
+section.contentGallery .container .uk-switcher .galleryGrid-featured {
+	border-radius: var(--rf-radius-lg) 0 0 var(--rf-radius-lg);
+	overflow: hidden;
+}
+
+section.contentGallery .container .uk-switcher .galleryGrid-thumbs {
+	border-radius: 0 var(--rf-radius-lg) var(--rf-radius-lg) 0;
+}
+
+@media only screen and (max-width: 959px) {
+	section.contentGallery .container .uk-switcher .galleryGrid-featured {
+		border-radius: var(--rf-radius-lg);
+	}
+
+	section.contentGallery .container .uk-switcher .galleryGrid-thumbs {
+		border-radius: 0;
+	}
+}
+
+section.contentGallery .container .uk-switcher .galleryGrid-featured img,
+section.contentGallery .container .uk-switcher .galleryGrid-item img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.contentGallery .container .uk-switcher .galleryGrid-featured:hover img,
+section.contentGallery .container .uk-switcher .galleryGrid-item:hover img {
+	transform: scale(1.04);
+}
+
+section.contentGallery .galleryGrid-nav .prev,
+section.contentGallery .galleryGrid-nav .next {
+	width: 40px;
+	height: 40px;
+}
+
+section.virtualTour .tourVideo {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+}
+
+/* --- Lokalita: mapa, legenda, záložky ------------------------------------- */
+section.mapContent .container .mapWrapper > div[data-map-id] {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	isolation: isolate;
+}
+
+section.mapContent .container .mapWrapper .legend {
+	border-radius: var(--rf-radius-lg);
+	box-shadow: 0 1px 2px rgb(13 24 31 / 0.06), 0 8px 24px rgb(13 24 31 / 0.08);
+}
+
+@media only screen and (max-width: 639px) {
+	section.mapContent .container .mapWrapper > div[data-map-id] {
+		border-radius: var(--rf-radius-lg) var(--rf-radius-lg) 0 0;
+	}
+
+	section.mapContent .container .mapWrapper .legend {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.2rem 1.6rem;
+		border-radius: 0 0 var(--rf-radius-lg) var(--rf-radius-lg);
+	}
+
+	section.mapContent .container .mapWrapper .legend p {
+		margin: 0;
+	}
+}
+
+/* První záložka „Vše“ byla na mobilu uříznutá (záporný okraj UIkit subnavu) */
+@media only screen and (max-width: 1199px) {
+	section.contentSubPage .container .content .uk-subnav {
+		margin-left: 0;
+	}
+}
+
+/* Karty míst na mobilu: 17 × 318px pod sebou (sekce 5 485px) → kompaktní
+   řádek s fotkou vlevo; obsah i pořadí stejné */
+@media only screen and (max-width: 639px) {
+	body.frontend-page-3 section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox {
+		display: grid;
+		grid-template-columns: 38% 1fr;
+		column-gap: 1.6rem;
+		align-items: center;
+		max-width: none;
+		margin-bottom: 1.6rem;
+	}
+
+	body.frontend-page-3 section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox > picture {
+		grid-row: span 3;
+		height: auto;
+		aspect-ratio: 5 / 4;
+		margin: 0;
+		border-radius: var(--rf-radius-lg);
+	}
+
+	body.frontend-page-3 section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox h3 {
+		font-size: 1.8rem;
+		line-height: 2.4rem;
+	}
+}

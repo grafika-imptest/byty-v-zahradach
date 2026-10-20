@@ -1,0 +1,90 @@
+/* =====================================================================
+   Brave Development — UI refinement layer
+   ---------------------------------------------------------------------
+   Načítá se PO původním CSS bundlu šablony a mění jen prezentaci:
+   rozměry, mezery, zarovnání, rámečky, stíny, stavy a přechody.
+   Logo, barvy, písmo (Poppins), obsah ani struktura stránek se nemění.
+   Zdroj: refine/src/*.css (spojuje tools/build.mjs). Do šablony patří
+   jako poslední stylopis, případně přepsat do SCSS po jednotlivých
+   komponentách — každý soubor odpovídá jedné oblasti.
+   ===================================================================== */
+
+:root {
+	/* Plynulá škála root fontu. Originál skáče z 10px (62.5 %) na 8.4px
+	   (52.5 %) pod 1560px, takže na 1440px je celý web o 16 % menší
+	   a odstavce mají ~11px. Teď 8.4px do ~1080px, 9.4px na 1440px
+	   a 10px od ~1680px — na 1920px beze změny. */
+	font-size: clamp(8.4px, calc(5.625px + 0.2604vw), 10px);
+
+	/* Barvy šablony (beze změny, jen pojmenované) */
+	--rf-green: #42c787;
+	--rf-green-dark: #2e9a66;
+	--rf-green-soft: #e9f6f0;
+	--rf-ink: #000;
+	--rf-ink-2: #3c3c3b;
+	--rf-muted: #666; /* audit: #7a7a7a měla na bílé jen 4,29:1 */
+	/* Kontrast WCAG AA (audit): zelená jako text a text na zelené */
+	--rf-green-ink: #1d7a4f; /* zelený text na bílé 5,3:1, na světle zelené 4,8:1 */
+	--rf-on-green: #0b2016; /* text na značkové zelené ploše — 8,8:1 */
+	--rf-line: rgb(0 0 0 / 0.08);
+	--rf-line-strong: rgb(0 0 0 / 0.14);
+	--rf-surface: #fff;
+	--rf-surface-2: #f6f7f6;
+
+	/* Layout: jeden obsahový „shell“ pro celý web */
+	--rf-gutter: clamp(16px, 3.4vw, 64px);
+	--rf-max: 1680px;
+	--rf-shell: calc(var(--rf-max) + 2 * var(--rf-gutter));
+	--rf-read: 70ch;
+	--rf-col-gap: clamp(24px, 3.2vw, 64px);
+
+	/* Vertikální rytmus sekcí */
+	--rf-section-y: clamp(56px, 6vw, 112px);
+	--rf-section-y-sm: clamp(40px, 4vw, 72px);
+	--rf-head-gap: clamp(24px, 2.6vw, 48px); /* nadpis sekce → obsah */
+
+	/* Tvary a hloubka — rádius 8px je rádius tlačítek šablony */
+	--rf-radius: 8px;
+	--rf-radius-lg: 16px;
+	--rf-shadow-sm: 0 1px 2px rgb(16 32 24 / 0.05), 0 2px 10px rgb(16 32 24 / 0.04);
+	--rf-shadow-md: 0 2px 4px rgb(16 32 24 / 0.04), 0 14px 32px -14px rgb(16 32 24 / 0.2);
+
+	/* Pohyb — stejná křivka jako šablona (cubic-bezier(.2,.7,.3,1)) */
+	--rf-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+	--rf-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--rf-dur: 0.2s;
+	--rf-dur-slow: 0.38s;
+
+	/* Hlavička */
+	--rf-header-h: 72px;
+	--rf-nav-offset: var(--rf-header-h); /* 0 při schované hlavičce (JS) */
+}
+
+@media (max-width: 1599px) {
+	:root {
+		--rf-header-h: 68px;
+	}
+}
+
+@media (max-width: 1199px) {
+	:root {
+		--rf-header-h: 64px;
+	}
+}
+
+@media (max-width: 479px) {
+	:root {
+		--rf-header-h: 60px;
+	}
+}
+
+html.rf-nav-hidden {
+	--rf-nav-offset: 0px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--rf-dur: 0.01s;
+		--rf-dur-slow: 0.01s;
+	}
+}

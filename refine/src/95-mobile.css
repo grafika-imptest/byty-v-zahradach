@@ -1,0 +1,230 @@
+/* =====================================================================
+   95 · Mobil a tablet — průřezové úpravy
+   ===================================================================== */
+
+/* overflow-x:hidden na html i body dělal z body scroll kontejner →
+   position:sticky uvnitř nefungoval. clip ořezává stejně, ale scroll
+   kontejner nevytváří. Starší prohlížeče zůstanou na hidden. */
+@supports (overflow: clip) {
+	html,
+	body {
+		overflow-x: clip;
+	}
+}
+
+/* --- Hlavička na mobilu --------------------------------------------------- */
+@media only screen and (max-width: 1199px) {
+	header section.topBar .uk-navbar-toggle {
+		flex: 0 0 44px;
+		color: var(--rf-ink-2);
+	}
+
+	/* Hamburger → křížek při otevřeném menu */
+	header section.topBar .uk-navbar-toggle svg .line {
+		transition: transform var(--rf-dur) var(--rf-ease), opacity var(--rf-dur);
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+
+	header section.topBar .uk-navbar-toggle[aria-expanded="true"] .line.top {
+		transform: translateY(18px) rotate(45deg);
+	}
+
+	header section.topBar .uk-navbar-toggle[aria-expanded="true"] .line.middle {
+		opacity: 0;
+	}
+
+	header section.topBar .uk-navbar-toggle[aria-expanded="true"] .line.bottom {
+		transform: translateY(-18px) rotate(-45deg);
+	}
+
+	/* Offcanvas pod hlavičkou: logo, CTA i hamburger zůstanou na místě
+	   (dřív bar překryl i hlavičku, křížek 24px v rohu, logo poskočilo) */
+	html.uk-offcanvas-page header,
+	html.uk-offcanvas-page header section.topBar {
+		z-index: 1010;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar {
+		top: var(--rf-header-h);
+		padding: 2rem var(--rf-gutter) 3.2rem;
+		box-shadow: inset 0 1px 0 #d9ece3;
+	}
+
+	#offcanvas-nav .uk-offcanvas-close,
+	#offcanvas-nav .uk-offcanvas-bar > .logo {
+		display: none;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top {
+		justify-content: flex-start;
+		gap: 4px;
+		margin: 0 -10px;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .menuLink {
+		min-width: 44px;
+		min-height: 44px;
+		justify-content: center;
+		margin: 0;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .menuLink > .icon {
+		margin-right: 0;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .languageSwitcher {
+		margin-left: auto;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .languageSwitcher .language li a {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 36px;
+		min-height: 44px;
+		font-size: 14px;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .uk-nav {
+		margin-top: 1.2rem;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .offcanvasMainNav > li > a {
+		font-size: 15px;
+		line-height: 22px;
+		padding: 13px 0;
+		letter-spacing: 0.04em;
+	}
+}
+
+/* --- Patička na mobilu: jedna hrana, dotykové řádky ------------------------ */
+@media only screen and (max-width: 959px) {
+	section.footerMain .footerNav ul li,
+	section.footerMain .footerTools ul li {
+		margin-bottom: 0;
+	}
+
+	section.footerMain .footerNav ul a,
+	section.footerMain .footerTools ul a {
+		display: block;
+		padding: 8px 0;
+		line-height: 24px;
+	}
+
+	section.footerMain .footerContact .contactLink {
+		min-height: 44px;
+		margin-bottom: 0;
+	}
+
+	section.footerEnd .container > .uk-grid > div {
+		padding-left: 15px;
+	}
+
+	section.footerEnd .container .uk-grid > div .menu li a {
+		display: inline-block;
+		padding: 12px 0;
+	}
+
+	section.footerEnd .container .uk-grid > div .menu li a,
+	section.footerEnd .container .uk-grid > div .copy {
+		color: rgb(255 255 255 / 0.7);
+	}
+}
+
+/* --- Boční odsazení: lokální přídavky se sčítaly s okrajem stránky -------- */
+@media only screen and (max-width: 959px) {
+	section.contentPage .container .uk-grid > div .text,
+	section.videoContent .container .uk-grid > div .text {
+		max-width: none;
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	section.vizualize .container .top h2,
+	section.vizualize .container .top .subtitle {
+		text-align: left;
+	}
+}
+
+/* --- Dotykové cíle (vzhled stejný, větší klikací plocha) ------------------- */
+@media (pointer: coarse) {
+	ul.uk-slider-nav.uk-dotnav {
+		margin-left: 0;
+		gap: 0;
+	}
+
+	ul.uk-slider-nav.uk-dotnav > * {
+		padding-left: 0;
+	}
+
+	ul.uk-slider-nav.uk-dotnav > * > * {
+		box-sizing: content-box;
+		border: 12px solid transparent;
+		background-clip: padding-box;
+	}
+
+	.flatCard form.ajax :is(button.favourite, button.comparator),
+	section.brokerProperties form.ajax button.productBox-component {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+	}
+
+	section.brokerProperties .uk-slider a:is(.uk-position-center-left, .uk-position-center-right) {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+	}
+
+	section.panoramaHero .panoramaHero__quickSearchItem span {
+		font-size: 12px;
+	}
+
+	section.panoramaHero .panoramaHero__quickSearchTrigger {
+		font-size: 14px;
+	}
+
+	section.panoramaHero .panoramaHero__quickSearchOption {
+		min-height: 44px;
+		font-size: 14px;
+	}
+}
+
+/* Rychlé vyhledávání: klikatelný byl jen 20px řádek hodnoty, ne celé pole */
+section.panoramaHero .panoramaHero__quickSearchTrigger::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+}
+
+/* --- Drobné písmo na mobilu (prvky v px, které škála rootu nezasáhne) ------ */
+@media only screen and (max-width: 639px) {
+	section.pageTopPanel .buyPanel__addonNote,
+	section.pageTopPanel .buyPanel__monthly .note,
+	section.unitDetail .unitRooms__note {
+		font-size: 13px;
+	}
+
+	section.brokerOffer fieldset label,
+	section.brokerOffer .dayCol > p,
+	section.brokerOffer .dayPartCol > p {
+		font-size: 14px;
+	}
+
+	.flatCard .top label {
+		font-size: 11.5px;
+		font-weight: 600;
+	}
+
+	section.newsExtract .newsExtractCard__meta {
+		font-size: 12px;
+	}
+
+	body section.benefits .container .content .uk-grid > div .benefitsBox p {
+		font-size: 14px;
+	}
+}

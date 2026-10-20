@@ -1,0 +1,5055 @@
+/* ---- 00-tokens.css ---- */
+/* =====================================================================
+   Brave Development — UI refinement layer
+   ---------------------------------------------------------------------
+   Načítá se PO původním CSS bundlu šablony a mění jen prezentaci:
+   rozměry, mezery, zarovnání, rámečky, stíny, stavy a přechody.
+   Logo, barvy, písmo (Urbanist), obsah ani struktura stránek se nemění.
+   Zdroj: refine/src/*.css (spojuje tools/build.mjs). Do šablony patří
+   jako poslední stylopis, případně přepsat do SCSS po jednotlivých
+   komponentách — každý soubor odpovídá jedné oblasti.
+   ===================================================================== */
+
+:root {
+	/* Plynulá škála root fontu. Originál skáče z 10px (62.5 %) na 8.4px
+	   (52.5 %) pod 1560px, takže na 1440px je celý web o 16 % menší
+	   a odstavce mají ~11px. Teď 8.4px do ~1080px, 9.4px na 1440px
+	   a 10px od ~1680px — na 1920px beze změny. */
+	font-size: clamp(8.4px, calc(5.625px + 0.2604vw), 10px);
+
+	/* Barvy šablony (beze změny, jen pojmenované) */
+	--rf-green: #617952;
+	--rf-green-dark: #4d6141;
+	--rf-green-soft: #eef1e8;
+	--rf-ink: #000;
+	--rf-ink-2: #45484f;
+	--rf-muted: #666; /* audit: #7a7a7a měla na bílé jen 4,29:1 */
+	/* Kontrast WCAG AA (audit): zelená jako text a text na zelené */
+	--rf-green-ink: #1d7a4f; /* zelený text na bílé 5,3:1, na světle zelené 4,8:1 */
+	--rf-on-green: #0b2016; /* text na značkové zelené ploše — 8,8:1 */
+	--rf-line: rgb(0 0 0 / 0.08);
+	--rf-line-strong: rgb(0 0 0 / 0.14);
+	--rf-surface: #fff;
+	--rf-surface-2: #f6f7f6;
+
+	/* Layout: jeden obsahový „shell“ pro celý web */
+	--rf-gutter: clamp(16px, 3.4vw, 64px);
+	--rf-max: 1680px;
+	--rf-shell: calc(var(--rf-max) + 2 * var(--rf-gutter));
+	--rf-read: 70ch;
+	--rf-col-gap: clamp(24px, 3.2vw, 64px);
+
+	/* Vertikální rytmus sekcí */
+	--rf-section-y: clamp(56px, 6vw, 112px);
+	--rf-section-y-sm: clamp(40px, 4vw, 72px);
+	--rf-head-gap: clamp(24px, 2.6vw, 48px); /* nadpis sekce → obsah */
+
+	/* Tvary a hloubka — rádius 8px je rádius tlačítek šablony */
+	--rf-radius: 8px;
+	--rf-radius-lg: 16px;
+	--rf-shadow-sm: 0 1px 2px rgb(16 32 24 / 0.05), 0 2px 10px rgb(16 32 24 / 0.04);
+	--rf-shadow-md: 0 2px 4px rgb(16 32 24 / 0.04), 0 14px 32px -14px rgb(16 32 24 / 0.2);
+
+	/* Pohyb — stejná křivka jako šablona (cubic-bezier(.2,.7,.3,1)) */
+	--rf-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+	--rf-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--rf-dur: 0.2s;
+	--rf-dur-slow: 0.38s;
+
+	/* Hlavička */
+	--rf-header-h: 72px;
+	--rf-nav-offset: var(--rf-header-h); /* 0 při schované hlavičce (JS) */
+}
+
+@media (max-width: 1599px) {
+	:root {
+		--rf-header-h: 68px;
+	}
+}
+
+@media (max-width: 1199px) {
+	:root {
+		--rf-header-h: 64px;
+	}
+}
+
+@media (max-width: 479px) {
+	:root {
+		--rf-header-h: 60px;
+	}
+}
+
+html.rf-nav-hidden {
+	--rf-nav-offset: 0px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--rf-dur: 0.01s;
+		--rf-dur-slow: 0.01s;
+	}
+}
+
+/* ---- 10-base.css ---- */
+/* =====================================================================
+   10 · Základ: vykreslení písma, výběr, fokus pro klávesnici
+   ===================================================================== */
+
+body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+::selection {
+	background: rgb(97 121 82 / 0.22);
+	color: inherit;
+}
+
+/* Šablona u tlačítek a odkazů ruší outline bez náhrady — vrátit
+   viditelný fokus jen pro klávesnici (myš nic nového neuvidí). */
+:where(a, button, input, select, textarea, summary, [tabindex], area):focus-visible {
+	outline: 2px solid var(--rf-green);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+:where(.button, .uk-button, .button-main):focus-visible {
+	outline: 2px solid var(--rf-green-dark);
+	outline-offset: 3px;
+}
+
+/* Obrázky v odkazech/kartách: hladké přiblížení při hoveru tam, kde ho
+   šablona používá (scale), ať nepůsobí trhaně */
+img {
+	image-rendering: auto;
+}
+
+/* ---- 20-layout.css ---- */
+/* =====================================================================
+   20 · Layout — jeden obsahový shell pro celý web
+   Originál: .container 1864px / 97 % a pod tím každá sekce vlastní strop
+   (1200px, 122rem, 125.3rem, 128rem, 137.6rem, 95 %, 97 %…). Na 1920 tak
+   měl obsah 1200–1376px, na 1440 jen 1025–1200px, a levé hrany sekcí
+   pod sebou skákaly. Teď:
+     · všechny sekce sdílí shell: max --rf-max (1680px) + okraje --rf-gutter,
+     · vnitřní stropy sekcí zrušené — šířku určuje shell,
+     · úzké zůstávají jen čtecí bloky textu (míra řádku), ne celé sekce.
+   ===================================================================== */
+
+.container {
+	width: 100%;
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	margin-inline: auto;
+	box-sizing: border-box;
+}
+
+@media only screen and (max-width: 1900px) {
+	.container {
+		max-width: var(--rf-shell);
+	}
+}
+
+/* Vnořený kontejner (sekce uvnitř sekce) nesmí okraj přičíst podruhé */
+.container .container {
+	max-width: none;
+	padding-inline: 0;
+}
+
+/* --- Vnitřní stropy sekcí → šířka shellu ------------------------------ */
+section.homepageGallery .container .content,
+section.quickFilter .container,
+section.dispositionShowcase .container,
+section.benefits .container .content,
+section.newsList .container .content,
+section.virtualTour .container .top,
+section.virtualTour .container .tourMedia,
+section.contentSubPage .container .content,
+section.subpageExtract .container .content,
+section.favouriteTop .container .content,
+section.favoriteList .container .content,
+section.projectListTitle .container .text,
+section.filterPanel .container .content,
+section.extractFlat .container .content,
+section.floorExtract .container .content,
+section.purchaseSteps .container,
+section.unitDetail .container .content,
+section.calculator .container .content,
+section.investmentCalculator .container .content,
+section.unitSlider .container .content,
+section.unitReasons .container,
+section.faqPack .container .faqFilter,
+section.faqPack .container .content,
+.frontend-reobroker section.pageTop.makler .content .container-entitySlider,
+.unitsTableSection .unitsTable,
+.unitsTableSection .loadMore,
+.unitsTableSection .unitsGrid,
+.filterPanel .filterRow {
+	max-width: none;
+}
+
+section.purchaseSteps .container,
+section.unitReasons .container {
+	width: 100%;
+}
+
+@media only screen and (max-width: 1199px) {
+	section.contentSubPage .container .content,
+	section.subpageExtract .container .content,
+	section.favoriteList .container .content,
+	section.filterPanel .container .content,
+	section.extractFlat .container .content,
+	section.unitSlider .container .content,
+	.frontend-reobroker section.pageTop.makler .content .container-entitySlider {
+		max-width: none;
+	}
+}
+
+/* Hero podstránek „plain/investment“ měly 97 % / 128rem */
+section.pageTopPanel.pageTopPanel--investment .container,
+section.pageTopPanel.pageTopPanel--plain .container,
+section.blogDetail .container,
+body.frontend-reounit section.pageTopPanel > .container {
+	width: 100%;
+	max-width: var(--rf-shell);
+}
+
+@media only screen and (max-width: 1199px) {
+	section.blogDetail .container {
+		max-width: var(--rf-shell);
+	}
+}
+
+@media only screen and (max-width: 959px) {
+	section.pageTopPanel.pageTopPanel--investment .container,
+	section.pageTopPanel.pageTopPanel--plain .container {
+		padding-inline: var(--rf-gutter);
+	}
+}
+
+/* Plnošířkové sekce s barevným pozadím: pozadí přes celou šířku,
+   obsah v shellu */
+section.newsExtract .container .content,
+section.footerPanel .container .content {
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	box-sizing: border-box;
+	margin-inline: auto;
+}
+
+section.filterPanel .container {
+	padding-inline: 0;
+}
+
+section.filterPanel .container .content {
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	box-sizing: border-box;
+}
+
+/* Vizualizace domu: fotka přes celou šířku, ale ne větší než obsah —
+   zdroj má 1600px, na 1920 se dřív roztahoval na 120 % a byl měkký.
+   Přepočet image mapy (rescaleImageMapAreas + maphilight) bere
+   vykreslenou šířku, takže strop v CSS je bezpečný. */
+section.vizualize .container {
+	padding-inline: 0;
+}
+
+section.vizualize .container .top {
+	padding-inline: var(--rf-gutter);
+}
+
+section.vizualize .container .maping {
+	max-width: var(--rf-max);
+	margin-inline: auto;
+}
+
+.container .container .maping,
+.layoutViz section.vizualize .container .top {
+	padding-inline: 0;
+}
+
+/* Homepage: galerie + dispozice vedle sebe ve shellu */
+.homepageGalleryDispositionGrid {
+	max-width: var(--rf-shell);
+	padding-left: var(--rf-gutter);
+	padding-right: var(--rf-gutter);
+	gap: var(--rf-col-gap);
+}
+
+@media only screen and (max-width: 1199px) {
+	.homepageGalleryDispositionGrid {
+		max-width: var(--rf-shell);
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	.homepageGalleryDispositionGrid {
+		padding-left: var(--rf-gutter);
+		padding-right: var(--rf-gutter);
+	}
+}
+
+.homepageGalleryDispositionGrid section .container {
+	padding-inline: 0;
+}
+
+/* Patička */
+section.footerMain .container,
+section.footerEnd .container {
+	padding-left: var(--rf-gutter);
+	padding-right: var(--rf-gutter);
+}
+
+/* GDPR: kontejner byl content-box s 97 % + 24px paddingu → na mobilu
+   přetékal o 36px (schované přes overflow-x:hidden) */
+section.pageContent.pageContent--legal .container {
+	box-sizing: border-box;
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+}
+
+/* ---- 30-header.css ---- */
+/* =====================================================================
+   30 · Hlavička
+   Původně dva řádky (utility nahoře, menu dole), 132px na 1440 a 154px
+   na 1920. Teď:
+     ≥1440px     jeden řádek 68–72px: logo · menu · ♡ ⚖ CS · CTA
+     1200–1439px kompaktní dvě patra 88px (tenký pruh utilit nad menu) —
+                 9 položek menu + CTA + utility se do jednoho řádku
+                 nevejdou bez zmenšení písma pod původní velikost
+     <1200px     64/60px: logo · CTA · hamburger
+   Pozice fixed + vlastní JS (brave-refine.js) místo UIkit sticky
+   "show-on-up", který se po scrollu nahoru nevracel. Místo v toku
+   drží <header> výškou --rf-header-h, takže obsah neposkočí.
+   ===================================================================== */
+
+header {
+	position: relative;
+	z-index: 980;
+	height: var(--rf-header-h);
+}
+
+header .uk-sticky-placeholder {
+	display: none !important;
+}
+
+header section.topBar,
+header section.topBar.uk-sticky,
+header section.topBar.uk-sticky-fixed {
+	position: fixed !important;
+	inset: 0 0 auto !important;
+	width: auto !important;
+	z-index: 980;
+	display: flex;
+	align-items: center;
+	height: var(--rf-header-h);
+	padding: 0;
+	margin: 0 !important;
+	background: rgb(255 255 255 / 0.97);
+	box-shadow: 0 1px 0 transparent;
+	transform: translate3d(0, 0, 0);
+	transition:
+		transform var(--rf-dur-slow) var(--rf-ease-out),
+		box-shadow var(--rf-dur) var(--rf-ease),
+		background-color var(--rf-dur) var(--rf-ease);
+	animation: none !important;
+}
+
+html.rf-nav-scrolled header section.topBar {
+	box-shadow: 0 1px 0 var(--rf-line), 0 8px 24px -18px rgb(16 32 24 / 0.35);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+	html.rf-nav-scrolled header section.topBar {
+		background: rgb(255 255 255 / 0.9);
+		backdrop-filter: saturate(1.6) blur(14px);
+	}
+}
+
+html.rf-nav-hidden header section.topBar {
+	transform: translate3d(0, calc(-100% - 2px), 0);
+	box-shadow: none;
+}
+
+/* Obsah hlavičky ve stejném shellu jako stránka — logo lícuje s obsahem */
+header section.topBar > .container {
+	width: 100%;
+	max-width: var(--rf-shell);
+	padding-inline: var(--rf-gutter);
+	box-sizing: border-box;
+	margin-inline: auto;
+}
+
+header section.topBar .container > .uk-grid {
+	flex-wrap: nowrap;
+	align-items: center;
+	margin-left: 0;
+	gap: 0 clamp(16px, 2vw, 40px);
+}
+
+header section.topBar .container > .uk-grid > * {
+	padding-left: 0;
+}
+
+/* Logo: 59px → 44px (desktop), poměr stran zachován */
+header section.topBar .container .uk-grid > div .logo {
+	height: 4.4rem;
+	max-width: 17.4rem;
+	margin: 0;
+	transition: opacity var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .logo:hover {
+	opacity: 0.8;
+}
+
+header section.topBar .container .uk-grid > div .menuPack {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0 clamp(12px, 1.2vw, 24px);
+	width: auto;
+	margin-left: auto;
+}
+
+header section.topBar .container .uk-grid > div .menuBar {
+	display: contents;
+}
+
+/* --- Desktop (≥1200px, kdy šablona ukazuje plné menu) --------------- */
+@media (min-width: 1200px) {
+	header section.topBar .container .uk-grid > div .menuBar > nav.menu-text {
+		order: 1;
+	}
+
+	header section.topBar .container .uk-grid > div .menuTop {
+		order: 2;
+		gap: 2px;
+		padding: 0 0 0 clamp(10px, 1vw, 20px);
+		margin: 0;
+		border: 0;
+		border-left: 1px solid var(--rf-line);
+		height: 28px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar > nav:not(.menu-text) {
+		order: 3;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text,
+	header section.topBar .container .uk-grid > div .menuBar > nav,
+	header section.topBar .container .uk-grid > div .menuTop {
+		flex-shrink: 0;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar-nav {
+		gap: 0;
+	}
+
+	/* Položky menu: stejné písmo a verzálky, menší prostrkání a rozestupy */
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li {
+		padding: 0 clamp(6px, calc(1.1vw - 9px), 13px);
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li a {
+		font-size: 1.3rem;
+		letter-spacing: clamp(0.04em, calc(0.14vw - 0.11em), 0.1em);
+		white-space: nowrap;
+		padding: 0.8rem 0;
+		min-height: 0;
+		color: #6b6b6b;
+		transition: color var(--rf-dur) var(--rf-ease);
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li a:hover,
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li.uk-active a {
+		color: var(--rf-ink);
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li a::before {
+		bottom: 0.2rem;
+		height: 2px;
+		border-radius: 2px;
+	}
+}
+
+/* --- 1200–1439px: kompaktní dvě patra ---------------------------------- */
+@media (min-width: 1200px) and (max-width: 1439px) {
+	:root {
+		--rf-header-h: 92px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuPack {
+		flex-wrap: wrap;
+		row-gap: 4px;
+		align-content: center;
+	}
+
+	header section.topBar .container .uk-grid > div .menuTop {
+		order: 0;
+		flex: 0 0 100%;
+		justify-content: flex-end;
+		height: 30px;
+		padding: 0 0 4px;
+		border-left: 0;
+		border-bottom: 1px solid var(--rf-line);
+	}
+
+	header section.topBar .container .uk-grid > div .menuTop .menuLink {
+		height: 26px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar.menu-text > div .uk-navbar-nav li:last-child {
+		padding-right: 0;
+	}
+}
+
+/* --- Oblíbené / Porovnání / Jazyk: kompaktní ikonová tlačítka ---------- */
+header section.topBar .container .uk-grid > div .menuTop .menuLink {
+	margin-right: 0;
+	height: 36px;
+	padding: 0 7px;
+	border-radius: var(--rf-radius);
+	gap: 8px;
+	transition: background-color var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink:hover {
+	background: var(--rf-surface-2);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .icon {
+	margin-right: 0;
+	display: inline-flex;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .icon .number {
+	top: -6px;
+	right: -7px;
+	min-width: 16px;
+	width: auto;
+	height: 16px;
+	padding: 0 4px;
+	box-sizing: border-box;
+	border-radius: 999px;
+	font: 600 10px/16px "Urbanist", sans-serif;
+	box-shadow: 0 0 0 2px #fff;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .text {
+	font-size: 1.3rem;
+	line-height: 1;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .menuLink .text::before {
+	display: none;
+}
+
+/* V jednom řádku jen ikona (popisek zůstává pro čtečky, tooltip z title) */
+@media (min-width: 1440px) {
+	header section.topBar .container .uk-grid > div .menuTop .menuLink .text {
+		position: absolute !important;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a {
+	gap: 4px;
+	padding: 0 7px;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a span {
+	font-size: 1.3rem;
+	font-weight: 500;
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a span.icon svg {
+	width: 12px;
+	height: 12px;
+	transition: transform var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher > a[aria-expanded="true"] span.icon svg {
+	transform: rotate(180deg);
+}
+
+header section.topBar .container .uk-grid > div .menuTop .languageSwitcher .uk-drop {
+	box-shadow: var(--rf-shadow-md);
+	border: 1px solid var(--rf-line);
+}
+
+/* --- CTA "Volné byty a ceník": 60px → 44px, stejné barvy a rádius ------ */
+header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+	height: 4.4rem;
+	min-height: 4.4rem;
+	padding: 0 2rem;
+	font-size: 1.3rem;
+	letter-spacing: 0.07em;
+	gap: 0.4rem;
+	white-space: nowrap;
+}
+
+header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main .mdi {
+	font-size: 1.6em;
+	line-height: 1;
+	margin-right: -0.4rem;
+	transition: transform var(--rf-dur) var(--rf-ease);
+}
+
+header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main:hover .mdi {
+	transform: translateX(2px);
+}
+
+/* --- Tablet a mobil (<1200px): logo · CTA · hamburger ------------------ */
+@media (max-width: 1199px) {
+	header section.topBar .container .uk-grid > div .logo {
+		height: 3.8rem;
+		max-width: 15rem;
+	}
+
+	header section.topBar .container .uk-grid > div .menuPack {
+		gap: 4px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+		height: 40px;
+		min-height: 40px;
+		margin-right: 4px;
+		padding: 0 16px;
+		font-size: 12px;
+		letter-spacing: 0.06em;
+	}
+
+	header section.topBar .uk-navbar-toggle {
+		width: 44px;
+		height: 44px;
+		min-height: 44px;
+		padding: 0;
+		justify-content: center;
+		border-radius: var(--rf-radius);
+		margin-right: -8px;
+	}
+
+	header section.topBar .uk-navbar-toggle:hover,
+	header section.topBar .uk-navbar-toggle:focus-visible {
+		background: var(--rf-surface-2);
+	}
+
+	header section.topBar .uk-navbar-toggle svg {
+		width: 30px;
+		height: 30px;
+	}
+}
+
+@media (max-width: 479px) {
+	header section.topBar .container .uk-grid > div .logo {
+		height: 30px;
+		max-width: 120px;
+	}
+
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+		height: 36px;
+		min-height: 36px;
+		padding: 0 12px;
+		font-size: 11px;
+		letter-spacing: 0.04em;
+	}
+}
+
+@media (max-width: 359px) {
+	header section.topBar .container .uk-grid > div .menuBar .uk-navbar > div .uk-navbar-nav li a.button-main {
+		padding: 0 10px;
+		letter-spacing: 0;
+	}
+}
+
+/* --- Plovoucí kontakt vlevo (desktop) ------------------------------------ */
+/* Vyčnívající část zúžena 6rem → 4.4rem, aby nepřekrývala obsah na hraně shellu */
+.widget a {
+	transform: translateX(calc(-100% + 4.4rem));
+}
+
+.widget a:hover,
+.widget a:focus-visible {
+	transform: translateX(0);
+}
+
+.widget a > span {
+	padding: 1.3rem 1.2rem 1.3rem 2rem;
+	box-shadow: var(--rf-shadow-sm);
+}
+
+/* --- Offcanvas menu (mobil) --------------------------------------------- */
+.uk-offcanvas-bar .uk-offcanvas-close {
+	width: 44px;
+	height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border-radius: var(--rf-radius);
+}
+
+.uk-offcanvas-bar .offcanvasMainNav > li > a {
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid rgb(0 0 0 / 0.06);
+	transition: color var(--rf-dur) var(--rf-ease), padding var(--rf-dur) var(--rf-ease);
+}
+
+.uk-offcanvas-bar .offcanvasMainNav > li > a:hover {
+	padding-left: 6px;
+}
+
+/* Kotvy: cíl nesmí skončit pod viditelnou hlavičkou */
+html {
+	scroll-padding-top: calc(var(--rf-header-h) + 12px);
+}
+
+/* ---- 40-system.css ---- */
+/* =====================================================================
+   40 · Design systém — tlačítka, nadpisy, nadtitulky, rytmus sekcí,
+   pás výhod, karty, fokus, cookie lišta
+   ===================================================================== */
+
+/* --- Tlačítka ------------------------------------------------------------
+   Hover primárního tlačítka měnil pozadí na #eef1e8 se zeleným textem
+   (kontrast ~1.9:1) — tlačítko vypadalo jako sekundární nebo vypnuté
+   a na mátovém pásu splynulo s pozadím. Teď jeden hover pro všechna
+   plná zelená tlačítka: tmavší zelená šablony (#4d6141) a bílý text,
+   stejně jako už měla patička (.footerCta). Tvar ani velikost se nemění. */
+.button,
+.uk-button,
+.button-flat {
+	transition:
+		background-color var(--rf-dur) var(--rf-ease),
+		border-color var(--rf-dur) var(--rf-ease),
+		color var(--rf-dur) var(--rf-ease),
+		transform 0.08s var(--rf-ease);
+}
+
+.button:not(.second, .transparent, .orange, .danger, .button-flat, .unitDetailButton, .button-secondary):hover,
+.uk-button:not(.second, .transparent, .uk-button-default, .uk-button-text):hover {
+	background: var(--rf-green-dark);
+	border-color: var(--rf-green-dark);
+	color: #fff !important;
+}
+
+/* Textové odkazy, které nesou .button jen kvůli resetu, si nechají svůj hover */
+body .flatCard .cardFoot > a.button:hover {
+	color: var(--rf-green-dark) !important;
+	border-color: transparent;
+}
+
+.button:active,
+.uk-button:active,
+.button-flat:active {
+	transform: translateY(1px);
+}
+
+.button .mdi-chevron-right {
+	transition: transform var(--rf-dur) var(--rf-ease);
+}
+
+.button:hover .mdi-chevron-right {
+	transform: translateX(2px);
+}
+
+/* Letter-spacing v em, ať škáluje s písmem (1.5px byl na 1440 relativně širší) */
+.button,
+.uk-button {
+	letter-spacing: 0.1em;
+}
+
+/* Malé obrysové tlačítko: na 1440 jen 10px tučných verzálek */
+.button-flat,
+.button.button-flat {
+	min-height: 3.6rem;
+	font-size: max(12px, 1.3rem);
+	letter-spacing: 0.06em;
+}
+
+/* --- Nadpisy sekcí H2 -----------------------------------------------------
+   Dřív 7 velikostí (26–50px), dvě váhy a dvě barvy. Teď standard
+   3.4rem / 700 / #000 pro obsahové sekce podstránek. Homepage má vlastní
+   dvě úrovně v 50-home.css. */
+:root {
+	--rf-h2: 3.4rem;
+	--rf-h1-app: 4.4rem;
+}
+
+@media only screen and (max-width: 639px) {
+	:root {
+		--rf-h2: 2.6rem;
+		--rf-h1-app: 3.2rem;
+	}
+}
+
+section.contentPage .container .uk-grid > div .text h2,
+section.videoContent .container .uk-grid > div .text h2,
+section.virtualTour .container .top h2,
+section.otherProjects .top h2,
+section.purchaseSteps .container > h2,
+section.newsList.moreNews .top h2,
+section.vizualize .container .top h2,
+section.unitSlider .container .content > h2,
+section.unitReasons .top h2,
+section.entityContact .container > h2 {
+	font-size: var(--rf-h2);
+	line-height: 1.2;
+	font-weight: 700;
+	color: #000;
+	letter-spacing: -0.005em;
+}
+
+section.purchaseSteps .container > h2,
+section.newsList.moreNews .top h2,
+section.unitSlider .container .content > h2 {
+	margin-bottom: var(--rf-head-gap);
+}
+
+/* --- H1 aplikačních a seznamových stránek: jedna velikost a barva -------- */
+section.projectListTitle .container .text h1,
+section.favouriteTop .container .content > .uk-grid > div .text .title h1,
+section.pageTopPanel.pageTopPanel--plain .container .uk-grid > div .text h1,
+section.pageTopPanel.pageTopPanel--investment .container .uk-grid > div .text h1,
+section.topContact .container .uk-grid > div .text h1 {
+	font-size: var(--rf-h1-app);
+	line-height: 1.15;
+	font-weight: 600;
+	color: #000;
+	letter-spacing: -0.01em;
+}
+
+/* --- Nadtitulky (eyebrow) ---------------------------------------------------
+   Odstup od nadpisu dával jen line-height (na 1440 ~4px) → vlastní mezera;
+   prostrkání v em. Velikost a barva beze změny. */
+:is(section.contentPage .container .uk-grid > div .text,
+	section.videoContent .container .uk-grid > div .text,
+	section.pageTopPanel .container .uk-grid > div .text,
+	section.homepageInteractive .container .uk-grid > div .content .text,
+	section.newsExtract .container .content .top .text,
+	section.homepageGallery .container .galleryColumn .galleryColumn__heading,
+	section.vizualize .container .top,
+	section.dispositionShowcase .top,
+	section.virtualTour .container .top,
+	section.otherProjects .top,
+	section.projectListTitle .container .text,
+	section.unitSlider .container .content,
+	section.topContact .container .uk-grid > div .text) > .subtitle {
+	line-height: 1.5;
+	letter-spacing: 0.1em;
+	margin-bottom: 1rem;
+}
+
+section.purchaseSteps .container > .subtitle {
+	letter-spacing: 0.1em;
+	margin-bottom: 1rem;
+}
+
+/* Nabídka (nejdůležitější stránka) měla jiný eyebrow (600 / 1px / mb 5px) */
+section.projectListTitle .container .text .subtitle {
+	font-weight: 700;
+}
+
+section.unitReasons .top .subtitle {
+	font-size: max(12px, 1.3rem);
+	letter-spacing: 0.1em;
+}
+
+/* --- Rytmus sekcí podstránek ------------------------------------------------
+   Mezery mezi sekcemi skákaly 50–229px (rem i px). Jedna škála tokenů:
+   --rf-section-y mezi typy sekcí, menší mezi navazujícími bloky obsahu. */
+section.contentPage {
+	padding: var(--rf-section-y-sm) 0;
+}
+
+section.pageTopPanel + section.contentPage,
+section.pageTopPanel + script + section.contentPage {
+	padding-top: var(--rf-section-y);
+}
+
+section.videoContent {
+	padding: var(--rf-section-y-sm) 0;
+}
+
+section.purchaseSteps,
+section.virtualTour,
+section.otherProjects,
+section.newsList.moreNews,
+section.unitSlider,
+section.faqPack,
+section.mapContent {
+	padding-top: var(--rf-section-y);
+	padding-bottom: var(--rf-section-y);
+}
+
+body:not(.frontend-homepage) section.vizualize {
+	padding-top: var(--rf-section-y);
+}
+
+/* --- Pás výhod (na 17 stránkách) -------------------------------------------- */
+.frontend-page section.benefits,
+.frontend-news section.benefits,
+.frontend-faq section.benefits,
+.frontend-newslist section.benefits {
+	margin-bottom: 0;
+}
+
+body section.benefits .container .content {
+	padding: calc(var(--rf-section-y-sm) + 3rem) var(--rf-gutter) var(--rf-section-y);
+}
+
+section.benefits .container .content .uk-grid {
+	row-gap: 4rem;
+}
+
+body section.benefits .container .content .uk-grid > div .benefitsBox h3 {
+	color: #000;
+}
+
+body section.benefits .container .content .uk-grid > div .benefitsBox p {
+	font-size: max(14px, 1.5rem);
+	line-height: 1.6;
+}
+
+/* --- Karty a panely: rádius 16px jako fotky šablony, střídmé stíny -------- */
+section.otherProjects .projectCard {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	box-shadow: var(--rf-shadow-sm);
+}
+
+section.otherProjects .projectCard-body {
+	box-shadow: none;
+}
+
+section.mapContent .legend {
+	border-radius: var(--rf-radius);
+	box-shadow: var(--rf-shadow-md);
+}
+
+section.faqPack .faqList {
+	border-radius: var(--rf-radius);
+}
+
+/* --- Pole formulářů: viditelný fokus (bundle outline rušil bez náhrady) ---- */
+.form-label fieldset input:focus,
+.form-label fieldset textarea:focus,
+.form-label fieldset select:focus,
+.select2-container--default.select2-container--focus .select2-selection {
+	border-color: var(--rf-green) !important;
+	box-shadow: 0 0 0 3px rgb(97 121 82 / 0.22);
+	outline: 0;
+}
+
+.newFilter .filterButton button:focus-visible,
+.filterPackContent .labels p button:focus-visible,
+.filterPackContent .mark .markPack button:focus-visible,
+.filterPackContent .reset:focus-visible {
+	outline: 2px solid var(--rf-green);
+	outline-offset: 2px;
+}
+
+section.footerMain a:focus-visible,
+section.footerEnd a:focus-visible,
+section.form .button:focus-visible {
+	outline-color: #fff;
+}
+
+/* --- Cookie lišta: tvar a stavy podle tokenů (texty a logika beze změny) --- */
+.cookie-bar {
+	border-radius: var(--rf-radius-lg) var(--rf-radius-lg) 0 0;
+	box-shadow: 0 -2px 4px rgb(16 32 24 / 0.04), 0 -14px 32px -14px rgb(16 32 24 / 0.2);
+}
+
+.cookie-bar form .row .green-button,
+.cookie-bar form .row-end .button-green {
+	border-radius: var(--rf-radius);
+	overflow: hidden;
+	transition: filter var(--rf-dur) var(--rf-ease);
+}
+
+.cookie-bar form .row .green-button:hover,
+.cookie-bar form .row-end .button-green:hover {
+	filter: brightness(0.92);
+}
+
+.cookie-bar form .row .button-secondary,
+.cookie-bar form .row-end .button {
+	border-radius: var(--rf-radius);
+}
+
+/* ---- 50-home.css ---- */
+/* =====================================================================
+   50 · Homepage
+   ===================================================================== */
+
+/* Hero vyplní přesně okno pod (nižší) hlavičkou — šablona počítá
+   s proměnnou --brave-header-height, kterou ale nikdo nenastavuje */
+:root {
+	--brave-header-height: var(--rf-header-h);
+}
+
+/* --- 360° hero ----------------------------------------------------------- */
+
+/* Text hero na levé hraně shellu (dřív +9rem navíc → jiná osa než logo).
+   Vrstva je absolutní přes celé hero, proto hranu dává padding, ne max-width. */
+section.panoramaHero .panoramaHero__copy {
+	max-width: none;
+	padding-inline: max(var(--rf-gutter), calc((100% - var(--rf-max)) / 2));
+}
+
+section.panoramaHero .panoramaHero__copyInner {
+	margin-left: 0;
+}
+
+/* Nadtitulek: dřív 16px zelená na obloze (kontrast ~2:1) a jediný bez
+   stylu ostatních nadtitulků → systémový eyebrow, bílý jako nadpis */
+section.panoramaHero .panoramaHero__copyInner .subtitle {
+	font: 700 1.4rem/2.4rem "Urbanist", sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: rgb(255 255 255 / 0.92);
+	text-shadow: 0 1px 12px rgb(13 24 31 / 0.5);
+	margin-bottom: 1.2rem;
+}
+
+/* Nápověda a ovládání na hranách shellu, ne natvrdo 32px od okraje okna */
+section.panoramaHero .panoramaHero__hint {
+	left: max(var(--rf-gutter), calc((100% - var(--rf-max)) / 2));
+}
+
+section.panoramaHero .panoramaHero__controls {
+	right: max(var(--rf-gutter), calc((100% - var(--rf-max)) / 2));
+}
+
+/* Rychlé vyhledávání: popisky 9.7px → čitelné, tvar pilulky beze změny */
+section.panoramaHero .panoramaHero__quickSearchItem span {
+	font-size: max(1.25rem, 11.5px);
+	letter-spacing: 0.01em;
+}
+
+section.panoramaHero .panoramaHero__quickSearchTrigger {
+	font-size: max(1.5rem, 13px);
+	color: #5f5f5f;
+}
+
+section.panoramaHero .panoramaHero__quickSearchItem {
+	transition: background-color var(--rf-dur) var(--rf-ease);
+	border-radius: 3.4rem;
+}
+
+section.panoramaHero .panoramaHero__quickSearchItem:hover {
+	background: var(--rf-surface-2);
+}
+
+/* Mobil: H1, nadtitulek a CTA byly pod 768px display:none — první
+   obrazovka byla jen panoráma bez nadpisu. Bundle už má pro ≤639px
+   připravený horní gradient i umístění, jen ho zabíjelo display:none. */
+@media only screen and (max-width: 767px) {
+	section.panoramaHero .panoramaHero__copy {
+		align-items: flex-start;
+	}
+
+	section.panoramaHero .panoramaHero__copyInner {
+		display: block;
+		width: auto;
+		max-width: 34rem;
+		margin: 0;
+		transform: none;
+	}
+
+	section.panoramaHero .panoramaHero__copyInner h1 {
+		font-size: 3.6rem;
+		line-height: 1.08;
+		margin-bottom: 1.6rem;
+	}
+
+	section.panoramaHero .panoramaHero__lead {
+		display: none;
+	}
+}
+
+@media only screen and (min-width: 640px) and (max-width: 767px) {
+	section.panoramaHero .panoramaHero__copy {
+		padding-top: 16rem;
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	section.panoramaHero .panoramaHero__copy {
+		padding-top: 2.4rem;
+	}
+
+	section.panoramaHero .panoramaHero__cta .button {
+		height: 44px;
+		padding: 0 18px;
+		font-size: 12px;
+	}
+}
+
+/* --- Rytmus sekcí homepage: jeden krok místo 80/40/34/114 px ---------- */
+body.frontend-homepage section.homepageInteractive {
+	padding-top: var(--rf-section-y);
+}
+
+body.frontend-homepage section.vizualize.vizualize--compactTop {
+	padding-top: var(--rf-section-y);
+}
+
+body.frontend-homepage .homepageGalleryDispositionGrid {
+	/* + polovina převislého CTA vizualizace */
+	padding-top: calc(var(--rf-section-y) + 3rem);
+	padding-bottom: var(--rf-section-y);
+}
+
+body.frontend-homepage section.newsExtract {
+	padding-top: 0;
+}
+
+body.frontend-homepage section.newsExtract .container {
+	padding-top: var(--rf-section-y);
+	padding-bottom: var(--rf-section-y);
+}
+
+/* --- Lokalita: text + mapa ve shellu, poměr 5 : 7 ---------------------- */
+@media only screen and (min-width: 960px) {
+	section.homepageInteractive .container > .uk-grid-collapse {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		column-gap: var(--rf-col-gap);
+		align-items: center;
+		margin-left: 0;
+	}
+
+	section.homepageInteractive .container > .uk-grid-collapse > div {
+		width: auto;
+		padding-left: 0;
+	}
+
+	section.homepageInteractive .container .uk-grid > div:first-of-type {
+		justify-content: flex-start;
+	}
+
+	section.homepageInteractive .container .uk-grid > div .content .text {
+		max-width: 64rem;
+		margin: 0;
+	}
+
+	section.homepageInteractive .container .uk-grid > div .picture {
+		max-width: none;
+	}
+}
+
+section.homepageInteractive .container .uk-grid > div .picture div[data-map-id] {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	isolation: isolate;
+}
+
+@media only screen and (max-width: 959px) {
+	section.homepageInteractive .container .uk-grid > div .content .text {
+		width: auto;
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	section.homepageInteractive .container .uk-grid > div .content .text .editableBlock p {
+		max-width: 64ch;
+	}
+}
+
+/* --- Nadpisy sekcí: jedna úroveň pro samostatné sekce, druhá pro páry --
+   Dřív 30 / 30 / 30 / 32 / 50px — nejvedlejší sekce (aktuality) měla
+   největší nadpis. Váhy 600/700 a Urbanist beze změny. */
+body.frontend-homepage section.homepageInteractive .container .uk-grid > div .content .text h2,
+body.frontend-homepage section.vizualize.vizualize--compactTop .top h2,
+body.frontend-homepage section.newsExtract .container .content .top .text h2 {
+	font: 600 4rem/1.18 "Urbanist", sans-serif;
+	letter-spacing: -0.01em;
+	color: #000;
+}
+
+.homepageGalleryDispositionGrid section.dispositionShowcase .top h2,
+section.homepageGallery .container .galleryColumn .galleryColumn__heading h2 {
+	font: 700 3rem/1.25 "Urbanist", sans-serif;
+	color: #000;
+}
+
+@media only screen and (max-width: 959px) {
+	body.frontend-homepage section.vizualize .container .top h2 {
+		text-align: left;
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	body.frontend-homepage section.homepageInteractive .container .uk-grid > div .content .text h2,
+	body.frontend-homepage section.vizualize.vizualize--compactTop .top h2,
+	body.frontend-homepage section.newsExtract .container .content .top .text h2 {
+		font-size: 3rem;
+		line-height: 1.22;
+	}
+
+	.homepageGalleryDispositionGrid section.dispositionShowcase .top h2,
+	section.homepageGallery .container .galleryColumn .galleryColumn__heading h2 {
+		font-size: 2.6rem;
+	}
+}
+
+/* --- Galerie + dispozice: spodní hrany a tlačítka v jedné lince -------- */
+.homepageGalleryDispositionGrid section.dispositionShowcase .top,
+.homepageGalleryDispositionGrid section.dispositionShowcase .tabs {
+	margin-bottom: 2.4rem;
+}
+
+@media only screen and (min-width: 1200px) {
+	/* 2 × 18rem miniatury + 0.8rem − záložky − okraj = 30rem */
+	.homepageGalleryDispositionGrid section.dispositionShowcase .buildingList {
+		height: 30rem;
+		grid-auto-rows: 1fr;
+		align-content: stretch;
+	}
+
+	.homepageGalleryDispositionGrid section.dispositionShowcase .panel__link {
+		margin-top: 4rem;
+	}
+}
+
+.homepageGalleryDispositionGrid section.dispositionShowcase .buildingList {
+	border-radius: var(--rf-radius-lg);
+	box-shadow: var(--rf-shadow-sm);
+	border: 1px solid var(--rf-line);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--rf-radius);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgb(13 24 31 / 0);
+	transition: background-color 0.3s var(--rf-ease);
+	pointer-events: none;
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox:hover img {
+	transform: scale(1.04);
+}
+
+section.homepageGallery .container .galleryGrid > div .gallBox:hover::after {
+	background: rgb(13 24 31 / 0.12);
+}
+
+section.dispositionShowcase .tab {
+	transition: background-color var(--rf-dur) var(--rf-ease), border-color var(--rf-dur) var(--rf-ease), color var(--rf-dur) var(--rf-ease);
+}
+
+/* Dispozice na mobilu: okraj se dřív přičítal dvakrát (karta 61 % šířky) */
+@media only screen and (max-width: 639px) {
+	.homepageGalleryDispositionGrid section.dispositionShowcase .container,
+	.homepageGalleryDispositionGrid section.dispositionShowcase .showcase {
+		width: 100%;
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+@media only screen and (max-width: 479px) {
+	.homepageGalleryDispositionGrid section.dispositionShowcase .stats {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1.2rem;
+	}
+
+	section.dispositionShowcase .tab {
+		padding: 0.8rem 1.2rem 0.8rem 1.6rem;
+	}
+}
+
+@media only screen and (max-width: 359px) {
+	.homepageGalleryDispositionGrid section.dispositionShowcase .stats {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+/* --- Aktuality: karty vyplní sloupce, klidnější hover ------------------ */
+section.newsExtract .newsExtractCard {
+	max-width: none;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+section.newsExtract .newsExtract__grid .newsExtractCard > picture {
+	max-width: none;
+	height: auto;
+	aspect-ratio: 41 / 24;
+}
+
+section.newsExtract .newsExtractCard > picture {
+	border-radius: var(--rf-radius-lg);
+}
+
+section.newsExtract .newsExtractCard > picture img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.newsExtract .newsExtractCard:hover > picture img {
+	transform: scale(1.04);
+}
+
+section.newsExtract .newsExtractCard h3 {
+	transition: color var(--rf-dur) var(--rf-ease);
+}
+
+section.newsExtract .newsExtractCard:hover h3 {
+	color: var(--rf-green-dark);
+}
+
+/* Meta řádek: zelená na mátové měla kontrast ~1.9:1 → text tmavý, ikony zelené */
+section.newsExtract .newsExtractCard .newsExtractCard__meta {
+	color: var(--rf-ink-2);
+}
+
+section.newsExtract .newsExtractCard .newsExtractCard__meta .mdi {
+	color: var(--rf-green);
+}
+
+@media only screen and (max-width: 959px) {
+	body.frontend-homepage section.newsExtract .container .content .top .text {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	section.newsExtract .newsExtractCard:hover > picture img,
+	section.homepageGallery .container .galleryGrid > div .gallBox:hover img {
+		transform: none;
+	}
+}
+
+/* ---- 60-units.css ---- */
+/* =====================================================================
+   60 · Výběr bytů — nabídka (tabulka / dlaždice / půdorysy), podlaží,
+   porovnání, oblíbené. Chování (řazení, hover náhled půdorysu, filtry,
+   snippety) beze změny — mění se zarovnání, hustota a stavy.
+   ===================================================================== */
+
+/* --- Levý panel: šířka nemá růst s širším shellem; jede s hlavičkou --- */
+@media only screen and (min-width: 960px) {
+	.frontend-reounitlist .unitsLayout .layoutGrid {
+		grid-template-columns: clamp(26rem, 22vw, 36rem) minmax(0, 1fr);
+		gap: 24px var(--rf-col-gap);
+	}
+}
+
+.frontend-reounitlist .unitsLayout .layoutGrid > .layoutSide {
+	top: calc(var(--rf-nav-offset) + 1.6rem);
+	max-height: calc(100vh - var(--rf-nav-offset) - 3.2rem);
+	transition: top var(--rf-dur-slow) var(--rf-ease-out), max-height var(--rf-dur-slow) var(--rf-ease-out);
+}
+
+/* Wireframe domu: linka 1.5:1 → čitelná; patra s volnými byty jemně tónovaná */
+body .layoutSide .wireframe .wireframe__building path {
+	stroke: rgb(122 122 122 / 0.62);
+}
+
+body .layoutSide .wireframe .wireframe__level:is([data-floor-state="available"], [data-floor-state="partial"]):not(.is-active) .wireframe__face {
+	fill: rgb(97 121 82 / 0.07);
+}
+
+body .layoutSide .wireframe .wireframe__level[data-wireframe-href]:not(.is-active):hover .wireframe__face {
+	fill: rgb(97 121 82 / 0.22);
+}
+
+/* --- Tabulka jednotek ---------------------------------------------------- */
+/* Jedna šablona sloupců pro hlavičku i řádky (dřív každý řádek vlastní
+   grid s fr bez minmax → hlavička a data posunuté o 7–9px) */
+@media only screen and (min-width: 768px) {
+	.unitsTableSection .unitsTable {
+		--unit-cols: minmax(0, 1.4fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1.1fr) 14rem;
+	}
+
+	.unitsTableSection .unitsTable .tRow {
+		grid-template-columns: var(--unit-cols);
+		column-gap: 1.6rem;
+	}
+
+	/* Hustota: 72–86px na jeden řádek textu → ~53px */
+	.unitsTableSection .unitsTable .tRow:not(.tHead) {
+		min-height: 5.6rem;
+		padding-top: 0.8rem;
+		padding-bottom: 0.8rem;
+	}
+}
+
+@media only screen and (min-width: 768px) and (max-width: 1199px) {
+	.unitsTableSection .unitsTable {
+		--unit-cols: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.1fr) 14rem;
+	}
+}
+
+/* Zarovnání podle typu dat: označení vlevo, kódy na střed, čísla vpravo */
+.unitsTableSection .unitsTable .tRow .cName {
+	text-align: left;
+}
+
+body .unitsTableSection .unitsTable .tRow:not(.tHead) .cName,
+body .unitsTableSection .unitsTable .tHead .cName .unitTableSort {
+	justify-content: flex-start;
+}
+
+.unitsTableSection .unitsTable .tRow :is(.cArea, .cPrice, .cOutdoor, .cTotalArea) {
+	text-align: right;
+}
+
+body .unitsTableSection .unitsTable .tHead :is(.cArea, .cPrice, .cOutdoor, .cTotalArea) .unitTableSort {
+	justify-content: flex-end;
+	text-align: right;
+}
+
+body .unitsTableSection .unitsTable .tHead :is(.cName, .cPrice) {
+	color: var(--rf-muted);
+}
+
+body .unitsTableSection .unitsTable .tRow sup {
+	font-size: 0.62em;
+	line-height: 0;
+}
+
+.unitsTableSection .unitsTable .tRow .cAction {
+	justify-content: flex-end;
+}
+
+.vizualizeHideSlot:empty {
+	display: none;
+}
+
+/* Hlavička tabulky zůstane vidět pod hlavičkou webu */
+.unitsTableSection .unitsTable .tRow.tHead {
+	position: sticky;
+	top: var(--rf-nav-offset);
+	z-index: 3;
+	transition: top var(--rf-dur-slow) var(--rf-ease-out);
+}
+
+/* Hover řádku spouští náhled půdorysu vlevo → má být znatelný */
+.unitsTableSection .unitsTable .tRow:not(.tHead) {
+	transition: background-color var(--rf-dur) var(--rf-ease);
+}
+
+body .unitsTableSection .unitsTable .tRow:not(.tHead):hover {
+	background: #f3faf6;
+}
+
+/* Tlačítko detailu stejně velké jako oblíbené/porovnat a jako poslední akce
+   vpravo — u rezervovaných řádků (bez oblíbené/porovnat) tak sedí ve stejném
+   sloupci jako u ostatních */
+body .unitsTableSection .unitsTable .tRow .cAction .button.unitDetailButton {
+	order: 2;
+	width: 3.6rem;
+	height: 3.6rem;
+	transition: background-color var(--rf-dur) var(--rf-ease), border-color var(--rf-dur) var(--rf-ease);
+}
+
+body .unitsTableSection .unitsTable .tRow:hover .cAction .button.unitDetailButton {
+	background: var(--rf-green);
+	border-color: var(--rf-green);
+}
+
+/* Mobil: 6 sloupců v 378px (cena pod tlačítkem, popisky přes sebe) →
+   dvouřádkový záznam z existujícího souhrnu .cMeta. V hlavičce zůstává
+   řazení podle označení a ceny. */
+@media only screen and (max-width: 767px) {
+	.unitsTableSection .unitsTable .tRow {
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 1.2rem;
+	}
+
+	.unitsTableSection .unitsTable .tRow.tHead {
+		grid-template-areas: "name price";
+		position: static;
+	}
+
+	.unitsTableSection .unitsTable .tRow.tHead > :not(.cName, .cPrice) {
+		display: none;
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) {
+		grid-template-areas: "name price" "meta action";
+		row-gap: 0.4rem;
+		padding: 1.2rem 0.4rem;
+		min-height: 0;
+		font-size: 13px;
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) :is(.cBuilding, .cFloor, .cOrientace, .cDispo, .cArea, .cOutdoor, .cTotalArea) {
+		display: none;
+	}
+
+	body .unitsTableSection .unitsTable .tRow .cName {
+		grid-area: name;
+		justify-content: flex-start;
+	}
+
+	body .unitsTableSection .unitsTable .tRow .cPrice {
+		grid-area: price;
+		text-align: right;
+		justify-content: flex-end;
+	}
+
+	body .unitsTableSection .unitsTable .tRow:not(.tHead) :is(.cName, .cPrice) {
+		font-size: 15px;
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) .cMeta {
+		display: block;
+		grid-area: meta;
+		align-self: center;
+		text-align: left;
+		font-size: 13px;
+		line-height: 1.4;
+		color: var(--rf-muted);
+	}
+
+	.unitsTableSection .unitsTable .tRow:not(.tHead) .cAction {
+		grid-area: action;
+		grid-column: auto;
+		justify-content: flex-end;
+		gap: 0.8rem;
+	}
+
+	.unitsTableSection .unitsTable .tRow .cAction :is(.favourite, .comparator),
+	body .unitsTableSection .unitsTable .tRow .cAction .button.unitDetailButton {
+		width: 40px;
+		height: 40px;
+	}
+}
+
+/* --- Mřížka karet (Dlaždice, Půdorysy, karty na podlaží) ---------------
+   .unitsGrid{margin:auto} rušil záporný okraj UIkit gridu → mřížka
+   posunutá o 15px proti titulku a liště, mezery 15px × 39px */
+.unitsTableSection .unitsGrid.uk-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 3.2rem 2.4rem;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.unitsTableSection .unitsGrid.uk-grid > * {
+	width: auto;
+	padding-left: 0;
+	margin-top: 0;
+}
+
+@media only screen and (min-width: 640px) {
+	.unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media only screen and (min-width: 1200px) {
+	.frontend-reounitlist .unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media only screen and (min-width: 960px) {
+	.frontend-reoprojectpart .unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media only screen and (min-width: 1200px) {
+	.frontend-reoprojectpart .unitsTableSection .unitsGrid.uk-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+/* Karta: rezervované/prodané byty nemají ikonová tlačítka → řádek
+   nesmí být nižší, jinak nesedí název a cena se sousedy */
+body .flatCard .title {
+	grid-template-rows: minmax(34px, auto) auto;
+}
+
+/* Půdorys (PNG s bílým pozadím) splyne s šedou plochou karty */
+body .flatCard .picture .picture__plan img {
+	mix-blend-mode: multiply;
+}
+
+/* --- Modál filtru -------------------------------------------------------- */
+/* Dráha posuvníku byla natvrdo ~118px (102 000 Kč na pixel) */
+.filterModal .filterGroup.range .Noui {
+	max-width: 56rem;
+}
+
+.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input {
+	grid-template-columns: 15rem minmax(0, 1fr) 15rem;
+	justify-content: stretch;
+	gap: 0 1.6rem;
+}
+
+.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .lower {
+	justify-content: flex-end;
+}
+
+@media only screen and (max-width: 639px) {
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input {
+		grid-template-columns: 1fr 1fr;
+		gap: 0.8rem;
+	}
+
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .lower {
+		justify-content: flex-start;
+	}
+
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .upper {
+		grid-column: 2;
+		grid-row: 1;
+		justify-content: flex-end;
+	}
+
+	.filterModal .filterPanel .filterGroup.range .Noui .input-slider-input .sliderTrack {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		margin: 0 0.8rem;
+	}
+
+	.filterModal .sortGroup .pills {
+		flex-wrap: wrap;
+		gap: 7px;
+		border: 0;
+		background: none;
+	}
+
+	.filterModal .sortGroup .pill {
+		border: 1px solid rgb(255 255 255 / 0.22) !important;
+		border-radius: 999px !important;
+	}
+}
+
+/* Živý počet výsledků držet nad patičkou modálu, ne pod okrajem okna */
+.filterModal .filterModal__result {
+	position: sticky;
+	bottom: var(--filter-foot-h, 85px);
+	z-index: 1;
+	margin: 0;
+	padding: 12px 0;
+	background: rgb(20 29 32 / 0.84);
+	backdrop-filter: blur(8px);
+}
+
+/* --- Detail podlaží ------------------------------------------------------ */
+section.floorExtract .container .content .buildingBtn {
+	width: 14rem;
+	min-height: 5.4rem;
+	font-size: max(1.3rem, 12px);
+}
+
+section.floorExtract .container .content .floorBtn {
+	width: 11rem;
+	font-size: max(1.3rem, 12px);
+}
+
+@media only screen and (max-width: 959px) {
+	section.floorExtract .container .content :is(.buildingBtn, .floorBtn) {
+		width: auto;
+	}
+}
+
+/* --- Prázdné stavy Porovnání / Oblíbené: jeden vzor --------------------- */
+section.comparisonSlider .comparisonEmpty h2,
+section.favoriteList .container .content .emptyNote {
+	max-width: 64rem;
+	margin: 0 auto;
+	padding: 3.2rem;
+	border: 1px solid var(--rf-line-strong);
+	border-radius: var(--rf-radius-lg);
+	font: 500 1.8rem/1.5 "Urbanist", sans-serif;
+	color: var(--rf-ink-2);
+	text-align: center;
+}
+
+section.comparisonSlider:has(.comparisonEmpty),
+section.favoriteList:has(.emptyNote) {
+	padding: 4.8rem 0;
+}
+
+
+/* ---- 70-content.css ---- */
+/* =====================================================================
+   70 · Obsahové stránky — O projektu, Standardy, Lokalita, Financování,
+   Galerie, O nás, detail místa
+   ===================================================================== */
+
+/* --- Hero podstránek -------------------------------------------------------
+   Textový panel byl posunutý left:33 % s bílou 70 % a ostrými rohy, takže
+   ležel přes zaoblenou fotku (na 1920 přes 203px) a odstavec běžel přes
+   fotku. Text teď ve vlastním sloupci na levé hraně obsahu. */
+@media only screen and (min-width: 960px) {
+	section.pageTopPanel .container .uk-grid > div .text {
+		left: auto;
+		background: none;
+		padding: 0 clamp(32px, 3vw, 64px) 0 0;
+		margin-bottom: clamp(40px, 4vw, 80px);
+	}
+
+	body.frontend-mapmarker section.pageTopPanel .container .uk-grid > div:first-of-type > .text,
+	body.frontend-mapmarker section.pageTopPanel .container .uk-grid > div:first-of-type > .backLink,
+	body.frontend-news section.pageTopPanel .container .uk-grid > div:first-of-type > .text,
+	body.frontend-news section.pageTopPanel .container .uk-grid > div:first-of-type > .backLink {
+		left: auto;
+	}
+}
+
+@media only screen and (max-width: 959px) {
+	section.pageTopPanel .container .uk-grid > div .text {
+		background: none;
+		padding: 0;
+	}
+}
+
+/* Odkaz Zpět (detail místa, článek): bez pevné min-width, na hraně H1 */
+body.frontend-mapmarker section.pageTopPanel .backLink,
+body.frontend-news section.pageTopPanel .backLink {
+	min-width: 0;
+}
+
+/* --- Média v blocích text + obrázek --------------------------------------- */
+/* Fotka a video pod sebou měly různou šířku (+6rem vs 100 %) a pevnou výšku
+   → proměnný poměr stran; YouTube náhled 4:3 ukazoval černé pruhy */
+@media only screen and (min-width: 960px) {
+	section.videoContent .container .uk-grid > div .video.videoFacade {
+		width: calc(100% + 6rem);
+		max-width: none;
+	}
+
+	section.contentPage .container .uk-grid > div > picture {
+		height: auto;
+		aspect-ratio: 924 / 529;
+	}
+}
+
+section.videoContent .container .uk-grid > div .video.videoFacade {
+	height: auto;
+	aspect-ratio: 16 / 9;
+}
+
+section.videoContent .container .uk-grid > div .video iframe {
+	height: auto;
+	aspect-ratio: 16 / 9;
+}
+
+/* Vysoká fotka koláže přetékala o 10px (margin-left + width:100 %) */
+section.contentPage .container .uk-grid > div .picture .uk-grid > div:last-of-type picture {
+	width: calc(100% - 1rem);
+}
+
+@media only screen and (max-width: 639px) {
+	section.contentPage .container .uk-grid > div .picture .uk-grid > div:last-of-type picture {
+		width: 100%;
+	}
+}
+
+/* --- Textový sloupec: optický střed volné plochy, míra 60–66 znaků ------- */
+@media only screen and (min-width: 960px) {
+	section.contentPage .container .uk-grid > div .text,
+	section.videoContent .container .uk-grid > div .text {
+		max-width: 56rem;
+		margin-left: clamp(48px, 5vw, 120px);
+		margin-right: auto;
+	}
+
+	section.contentPage .container .uk-grid > div.uk-flex-first .text {
+		margin-left: auto;
+		margin-right: clamp(48px, 5vw, 120px);
+	}
+
+	section.contentPage .container .uk-grid > div .text p,
+	section.videoContent .container .uk-grid > div .text p {
+		max-width: 64ch;
+	}
+}
+
+/* Mobil/tablet: lokální vnitřní odsazení se sčítalo s okrajem stránky
+   (text o 84px užší než fotka pod ním) */
+@media only screen and (max-width: 959px) {
+	body.frontend-page section.contentPage .container > .uk-grid > div .text,
+	body.frontend-page section.videoContent .container > .uk-grid > div .text {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	body.frontend-page-4 section.calculator > .container > .content {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	section.purchaseSteps > .container,
+	section.otherProjects .top {
+		width: auto;
+	}
+
+	section.virtualTour .container .top {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+/* --- Kroky nákupu ----------------------------------------------------------- */
+/* Nadpis vlevo nad obsahem na střed → společná osa (jako vizualizace) */
+section.purchaseSteps .container > .subtitle,
+section.purchaseSteps .container > h2 {
+	text-align: center;
+}
+
+/* Popis 11.8px tučně na střed → čitelnější řez a velikost */
+section.purchaseSteps .container .steps .step p {
+	font: 500 max(1.5rem, 13px) / 1.55 "Urbanist", sans-serif;
+	color: var(--rf-ink-2);
+	max-width: 28rem;
+	margin-inline: auto;
+}
+
+section.purchaseSteps .container .steps .step:not(:last-child)::after {
+	color: #9a9a9a;
+}
+
+/* --- Další projekty (O nás): jeden jemný stín, zaoblení jako média -------- */
+section.otherProjects .projectCard {
+	border-top: 0;
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgb(13 24 31 / 0.06), 0 12px 32px rgb(13 24 31 / 0.08);
+}
+
+section.otherProjects .projectCard-body {
+	box-shadow: none;
+}
+
+section.otherProjects .projectSlider .uk-slider-items {
+	padding: 8px 0 32px;
+}
+
+/* --- Galerie + virtuální prohlídka ---------------------------------------- */
+section.contentGallery .container .uk-switcher .galleryGrid-featured {
+	border-radius: var(--rf-radius-lg) 0 0 var(--rf-radius-lg);
+	overflow: hidden;
+}
+
+section.contentGallery .container .uk-switcher .galleryGrid-thumbs {
+	border-radius: 0 var(--rf-radius-lg) var(--rf-radius-lg) 0;
+}
+
+@media only screen and (max-width: 959px) {
+	section.contentGallery .container .uk-switcher .galleryGrid-featured {
+		border-radius: var(--rf-radius-lg);
+	}
+
+	section.contentGallery .container .uk-switcher .galleryGrid-thumbs {
+		border-radius: 0;
+	}
+}
+
+section.contentGallery .container .uk-switcher .galleryGrid-featured img,
+section.contentGallery .container .uk-switcher .galleryGrid-item img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.contentGallery .container .uk-switcher .galleryGrid-featured:hover img,
+section.contentGallery .container .uk-switcher .galleryGrid-item:hover img {
+	transform: scale(1.04);
+}
+
+section.contentGallery .galleryGrid-nav .prev,
+section.contentGallery .galleryGrid-nav .next {
+	width: 40px;
+	height: 40px;
+}
+
+section.virtualTour .tourVideo {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+}
+
+/* --- Lokalita: mapa, legenda, záložky ------------------------------------- */
+section.mapContent .container .mapWrapper > div[data-map-id] {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	isolation: isolate;
+}
+
+section.mapContent .container .mapWrapper .legend {
+	border-radius: var(--rf-radius-lg);
+	box-shadow: 0 1px 2px rgb(13 24 31 / 0.06), 0 8px 24px rgb(13 24 31 / 0.08);
+}
+
+@media only screen and (max-width: 639px) {
+	section.mapContent .container .mapWrapper > div[data-map-id] {
+		border-radius: var(--rf-radius-lg) var(--rf-radius-lg) 0 0;
+	}
+
+	section.mapContent .container .mapWrapper .legend {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.2rem 1.6rem;
+		border-radius: 0 0 var(--rf-radius-lg) var(--rf-radius-lg);
+	}
+
+	section.mapContent .container .mapWrapper .legend p {
+		margin: 0;
+	}
+}
+
+/* První záložka „Vše“ byla na mobilu uříznutá (záporný okraj UIkit subnavu) */
+@media only screen and (max-width: 1199px) {
+	section.contentSubPage .container .content .uk-subnav {
+		margin-left: 0;
+	}
+}
+
+/* Karty míst na mobilu: 17 × 318px pod sebou (sekce 5 485px) → kompaktní
+   řádek s fotkou vlevo; obsah i pořadí stejné */
+@media only screen and (max-width: 639px) {
+	body.frontend-page-3 section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox {
+		display: grid;
+		grid-template-columns: 38% 1fr;
+		column-gap: 1.6rem;
+		align-items: center;
+		max-width: none;
+		margin-bottom: 1.6rem;
+	}
+
+	body.frontend-page-3 section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox > picture {
+		grid-row: span 3;
+		height: auto;
+		aspect-ratio: 5 / 4;
+		margin: 0;
+		border-radius: var(--rf-radius-lg);
+	}
+
+	body.frontend-page-3 section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox h3 {
+		font-size: 1.8rem;
+		line-height: 2.4rem;
+	}
+}
+
+/* ---- 75-unit.css ---- */
+/* =====================================================================
+   75 · Detail bytu, makléř, makléři
+   ===================================================================== */
+
+/* --- Hero detailu bytu: text na hraně obsahu, cena jako hlavní číslo ----- */
+body.frontend-reounit section.pageTopPanel {
+	padding-top: clamp(24px, 3vw, 40px);
+}
+
+body.frontend-reounit section.pageTopPanel .container .uk-grid > div:first-of-type > :is(.text, .backLink) {
+	left: 0;
+}
+
+body.frontend-reounit section.pageTopPanel .container .uk-grid > div:first-of-type > .backLink {
+	padding-left: 0;
+	margin-bottom: 16px;
+	min-width: 0;
+}
+
+@media only screen and (min-width: 960px) {
+	body.frontend-reounit section.pageTopPanel .container .uk-grid > div:first-of-type {
+		justify-content: flex-start;
+	}
+}
+
+body.frontend-reounit section.pageTopPanel .text .atr {
+	font-size: max(1.6rem, 14px);
+	font-weight: 500;
+}
+
+body.frontend-reounit section.pageTopPanel .text .atr--features {
+	font-size: max(1.4rem, 13px);
+	color: var(--rf-muted);
+}
+
+/* 3 náhledy v mřížce na 4 sloupce → prázdný slot; sloupce podle počtu */
+body.frontend-reounit .pageTopPanel .heroGallery .thumbs:has(> a:nth-child(3):last-child) {
+	grid-template-columns: repeat(3, 1fr);
+}
+
+body.frontend-reounit .pageTopPanel .heroGallery .thumbs:has(> a:nth-child(2):last-child) {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+/* --- Rozpis místností a poloha v domě ------------------------------------- */
+@media only screen and (min-width: 960px) {
+	body.frontend-reounit section.unitDetail .container .content .uk-grid > div .unitRooms {
+		position: sticky;
+		top: calc(var(--rf-nav-offset) + 24px);
+		transition: top var(--rf-dur-slow) var(--rf-ease-out);
+	}
+}
+
+body.frontend-reounit section.unitDetail .container .content .uk-grid > div .unitRooms__table thead th:last-child {
+	text-align: right;
+}
+
+/* Chyba v bundlu (špatně vnořený selektor): polygon „Poloha v domě“ byl
+   zelený i u rezervovaných a prodaných bytů. Barvy stavů jsou šablony. */
+.frontend-reounit .planBox .floorPosition.is-reserved .floorPosition__polygon polygon {
+	fill: rgb(199 126 27 / 0.4);
+	stroke: #c77e1b;
+}
+
+.frontend-reounit .planBox .floorPosition.is-sold .floorPosition__polygon polygon {
+	fill: rgb(205 19 10 / 0.4);
+	stroke: #cd130a;
+}
+
+/* --- Formulář u makléře (zelená sekce) ------------------------------------ */
+/* Hover tlačítka splýval se zeleným pozadím, zelený fokus na zelené nebyl vidět */
+body.frontend-reounit section.brokerOffer .form .submitPack:hover input[type="submit"] {
+	background: #fff !important;
+	border-color: #fff !important;
+	color: var(--rf-green-dark) !important;
+}
+
+body.frontend-reounit section.brokerOffer .form .submitPack:hover picture.icon svg path {
+	stroke: var(--rf-green-dark) !important;
+}
+
+section.brokerOffer .form fieldset :is(input, textarea):focus {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
+section.brokerOffer .form fieldset :is(input, textarea).uk-form-danger {
+	border-color: #cd130a !important;
+}
+
+/* Chyba validace se kreslila přes zadávaný text → pod pole na bílý štítek */
+section.brokerOffer .form fieldset .error {
+	position: static;
+	display: flex;
+	gap: 4px;
+	width: fit-content;
+	margin-top: 6px;
+	padding: 2px 8px;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 12px;
+	color: #cd130a;
+}
+
+body.frontend-reounit section.brokerOffer .form .uk-grid > div > p {
+	max-width: 34ch;
+}
+
+@media only screen and (min-width: 960px) {
+	body.frontend-reounit section.brokerOffer .colleagueBox {
+		position: sticky;
+		top: calc(var(--rf-nav-offset) + 24px);
+	}
+}
+
+/* iOS zoomuje stránku při fokusu pole s písmem pod 16px */
+@media only screen and (max-width: 959px) {
+	:is(section.brokerOffer, section.contactSection, section.calculator, section.investmentCalculator, section.form) :is(input[type="text"], input[type="email"], input[type="tel"], input[type="number"], textarea, select) {
+		font-size: 16px !important;
+	}
+}
+
+/* --- Kalkulačky na detailu: stejné rámování obou karet -------------------- */
+section.purchaseSteps > .container {
+	max-width: none;
+}
+
+/* --- Podobné byty (slider): tichá hrana karty, větší mezera ---------------- */
+section.unitSlider .flatCard {
+	border: 1px solid #ededed;
+	overflow: hidden;
+	transition: border-color var(--rf-dur) var(--rf-ease);
+}
+
+section.unitSlider .flatCard:hover {
+	border-color: #dcdcdc;
+}
+
+section.unitSlider .flatCard .title p {
+	font-size: max(1.4rem, 13px);
+}
+
+/* --- Makléř: hlavička profilu ---------------------------------------------- */
+/* Prázdný tmavý pruh 218px bez obsahu odsouval profil dolů */
+section.pageTop.makler > .bg {
+	display: none;
+}
+
+section.pageTop.makler {
+	padding-top: clamp(32px, 4vw, 64px);
+}
+
+section.pageTop.makler .portrait {
+	overflow: hidden;
+	border-radius: var(--rf-radius-lg);
+}
+
+section.pageTop.makler .portrait img {
+	object-fit: cover;
+	object-position: top;
+}
+
+section.pageTop.makler .button-wrapper .ico2 svg {
+	transform: rotate(90deg);
+}
+
+section.pageTop.makler .contactBanner {
+	border-radius: var(--rf-radius-lg);
+}
+
+/* --- Karty makléřů (výpis + „kontaktovat někoho konkrétního“) ------------- */
+:is(section.entityContact, section.maklerList) .entityBox .picture {
+	aspect-ratio: 4 / 5;
+	overflow: hidden;
+	border-radius: var(--rf-radius-lg);
+	background: var(--rf-surface-2);
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .picture img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: top;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .bottom {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .next-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .next-link .ico svg {
+	width: 16px;
+	height: 16px;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .button-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+section.maklerList .uk-slider-items:has(> li:only-child) {
+	justify-content: center;
+}
+
+/* --- Nemovitosti makléře (.productBox): sjednotit s kartou bytu ----------- */
+section.brokerProperties .uk-grid > div > .productBox {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid #ededed;
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	margin-bottom: 0;
+	transition: border-color var(--rf-dur) var(--rf-ease), box-shadow var(--rf-dur) var(--rf-ease);
+}
+
+section.brokerProperties .uk-grid > div > .productBox:hover {
+	border-color: #dcdcdc;
+	box-shadow: var(--rf-shadow-md);
+}
+
+section.brokerProperties .uk-grid {
+	row-gap: 24px;
+}
+
+/* --- Formulář na stránce makléře neměl v bundlu žádné styly ---------------- */
+section.contactSection.formSection {
+	padding: var(--rf-section-y) 0;
+}
+
+section.contactSection.formSection .form fieldset {
+	position: relative;
+	margin: 0;
+}
+
+section.contactSection.formSection .form fieldset :is(input[type="text"], input[type="email"], input[type="tel"], textarea) {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 48px;
+	padding: 1.2rem 1.6rem;
+	border: 1px solid #e3e3e3;
+	border-radius: var(--rf-radius);
+	background: #fff;
+	font: 400 max(1.6rem, 15px) / 1.4 "Urbanist", sans-serif;
+	color: var(--rf-ink-2);
+	appearance: none;
+	transition: border-color var(--rf-dur), box-shadow var(--rf-dur);
+}
+
+section.contactSection.formSection .form fieldset textarea {
+	min-height: 12rem;
+	resize: vertical;
+}
+
+section.contactSection.formSection .form fieldset :is(input, textarea):focus {
+	border-color: var(--rf-green);
+	box-shadow: 0 0 0 3px rgb(97 121 82 / 0.22);
+	outline: 0;
+}
+
+/* Šipky slideru „vně“ (42px + 15px okraj) se do širšího shellu nevešly
+   a přetékaly okno o 9–13px → ve žlábku bez okraje, na užších šířkách
+   uvnitř přes kraj karet */
+section.unitSlider .uk-slidenav.uk-position-small {
+	margin: 0;
+}
+
+@media only screen and (max-width: 1279px) {
+	section.unitSlider .uk-position-center-left-out {
+		right: auto;
+		left: 8px;
+	}
+
+	section.unitSlider .uk-position-center-right-out {
+		left: auto;
+		right: 8px;
+	}
+
+	section.unitSlider .uk-slidenav {
+		background: rgb(255 255 255 / 0.92);
+		border-radius: 50%;
+		box-shadow: var(--rf-shadow-sm);
+		z-index: 3;
+	}
+}
+
+/* ---- 80-misc.css ---- */
+/* =====================================================================
+   80 · FAQ, aktuality, článek, kontakty, GDPR, kalkulačka, formuláře
+   ===================================================================== */
+
+/* Výchozí UIkit: růžové <em> (čte se jako chyba) — dědit barvu textu */
+em {
+	color: inherit;
+}
+
+/* --- FAQ ----------------------------------------------------------------- */
+/* Akordeon přes 128rem → odpovědi ~133 znaků na řádek; vlastní čtecí šířka */
+section.faqPack .container .faqList {
+	max-width: 96rem;
+	margin-inline: auto;
+}
+
+section.faqPack .container .faqList li .uk-accordion-content p,
+section.faqPack .container .faqList li .uk-accordion-content > ul {
+	max-width: 66ch;
+}
+
+section.faqPack .container .faqList li .uk-accordion-title {
+	background: #fff;
+	align-items: flex-start;
+	transition: background-color var(--rf-dur) var(--rf-ease), color var(--rf-dur) var(--rf-ease);
+}
+
+section.faqPack .container .faqList li .uk-accordion-title:hover {
+	background: var(--rf-surface-2);
+}
+
+section.faqPack .container .faqList li.uk-open .uk-accordion-title {
+	background: #fff;
+}
+
+section.faqPack .container .faqList li.uk-open .uk-accordion-title .q {
+	font-weight: 500;
+}
+
+section.faqPack .container .faqList li .uk-accordion-content {
+	padding-top: 0;
+}
+
+/* Fokus byl mimo box a overflow:hidden ho ořízl celý */
+section.faqPack .container .faqList li .uk-accordion-title:focus-visible {
+	outline-offset: -3px;
+}
+
+section.faqPack .container .faqList li .uk-accordion-title .ico {
+	height: 2.9rem;
+}
+
+@media only screen and (max-width: 959px) {
+	.frontend-faq section.faqPack .container .faqList {
+		margin-inline: 0;
+	}
+
+	.frontend-faq section.faqPack .container .faqTabs {
+		padding-inline: 0;
+	}
+}
+
+/* --- Karty aktualit a POI (pageConBox) + Další aktuality (newsBox) ----- */
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox,
+section.newsList .newsBox {
+	max-width: none;
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox > picture,
+section.newsList .newsBox > picture {
+	height: auto;
+	aspect-ratio: 3 / 2;
+	max-width: none;
+	border-radius: var(--rf-radius-lg);
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox h3 {
+	-webkit-line-clamp: 2;
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox .pageConBox__distance {
+	color: var(--rf-green-dark);
+	font-size: max(1.3rem, 12px);
+}
+
+:is(.pageConBox, .newsBox) h3 {
+	transition: color var(--rf-dur) var(--rf-ease);
+}
+
+:is(.pageConBox, .newsBox):hover h3 {
+	color: var(--rf-green-dark);
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox > picture img,
+section.newsList .newsBox > picture img {
+	transition: transform 0.6s var(--rf-ease);
+}
+
+section.contentSubPage .container .content .uk-switcher .uk-grid > div .pageConBox:hover > picture img,
+section.newsList .newsBox:hover > picture img {
+	transform: scale(1.04);
+}
+
+/* --- Detail článku: tělo je hlavní text, ne slabší než perex ----------- */
+section.blogDetail {
+	padding: 1.6rem 0 0;
+}
+
+section.blogDetail .container .text {
+	max-width: 66ch;
+}
+
+section.blogDetail .container .text :is(p, li) {
+	font: 400 1.8rem/1.7 "Urbanist", sans-serif;
+	color: var(--rf-ink-2);
+}
+
+section.blogDetail .container .text h2 {
+	margin-top: 4.8rem;
+}
+
+section.blogDetail .container .text h3 {
+	margin-top: 3.6rem;
+}
+
+section.blogDetail .container .text :is(h2, h3):first-child {
+	margin-top: 0;
+}
+
+section.blogDetail .container .text a {
+	color: var(--rf-green-dark);
+	text-decoration: underline;
+	text-underline-offset: 0.3em;
+}
+
+section.blogDetail .container .text :is(img, iframe) {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--rf-radius-lg);
+}
+
+/* --- Kontakty ------------------------------------------------------------ */
+section.topContact {
+	padding: clamp(32px, 4vw, 72px) 0;
+}
+
+section.topContact .container > .uk-grid {
+	align-items: center;
+}
+
+section.topContact .container .uk-grid > div .mapWrapper {
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	isolation: isolate;
+}
+
+section.topContact .container .uk-grid > div .mapWrapper div[data-map-id] {
+	height: clamp(42rem, 62vh, 60rem);
+}
+
+section.topContact .container .uk-grid > div .text .entityBox {
+	border-radius: var(--rf-radius-lg);
+}
+
+@media only screen and (max-width: 959px) {
+	section.topContact .container .uk-grid > div .text {
+		padding-inline: 0;
+	}
+}
+
+/* Zelená sekce s formulářem: 64px světlé pruhy nad/pod fotkou a obsah
+   posunutý dolů (213 vs 102px) → vzor, který šablona už má pro oblíbené */
+@media only screen and (min-width: 1200px) {
+	body.frontend-contact section.form {
+		height: auto;
+		overflow: hidden;
+		padding: clamp(64px, 7vw, 128px) 0;
+	}
+
+	body.frontend-contact section.form > picture {
+		position: absolute;
+		inset: 0;
+		height: 100%;
+	}
+
+	body.frontend-contact section.form .container {
+		position: relative;
+		left: auto;
+		top: auto;
+		transform: none;
+	}
+
+	body.frontend-contact section.form .container > .content {
+		padding-top: 0;
+	}
+
+	body.frontend-contact section.form .container > .content > .uk-grid {
+		align-items: center;
+	}
+}
+
+/* Pole formuláře na zeleném: fokus byl k nerozeznání, tlačítko na hover
+   splynulo s pozadím sekce */
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea) {
+	transition: background-color var(--rf-dur), border-color var(--rf-dur), box-shadow var(--rf-dur);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea):hover {
+	background: rgb(255 255 255 / 0.85);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea):focus {
+	background: #fff;
+	border-color: #fff;
+	box-shadow: 0 0 0 4px rgb(255 255 255 / 0.35);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div fieldset :is(input, textarea):focus-visible {
+	outline: none !important;
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div .submitPack input[type="submit"] {
+	color: var(--rf-green-dark);
+	transition: background-color var(--rf-dur), color var(--rf-dur);
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div .submitPack:hover input[type="submit"] {
+	background: var(--rf-green-dark);
+	color: #fff;
+}
+
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div .submitPack:hover picture.icon svg path {
+	stroke: #fff !important;
+}
+
+/* Souhlas a „ozveme se do 24 h“: 10.9px bílá na zelené → čitelnější */
+body section.form .container > .content .uk-grid > div .formPack form .uk-grid > div > p {
+	font-size: max(1.4rem, 13px);
+	font-weight: 500;
+	line-height: 1.6;
+	max-width: 34rem;
+}
+
+/* --- GDPR / právní text --------------------------------------------------- */
+section.pageContent.pageContent--legal .container .text :is(p, ul, ol) {
+	max-width: 66ch;
+}
+
+section.pageContent.pageContent--legal .container .text li {
+	font-size: 1.7rem;
+	line-height: 1.75;
+}
+
+section.pageContent.pageContent--legal .container .text li::before {
+	top: 1.15em;
+}
+
+body.frontend-processingpersonaldata section.pageTopPanel.pageTopPanel--plain .container {
+	max-width: calc(92rem + 2 * var(--rf-gutter));
+}
+
+@media only screen and (max-width: 959px) {
+	section.pageContent.pageContent--legal .container .text {
+		width: 100%;
+	}
+}
+
+/* --- Investiční kalkulačka ------------------------------------------------ */
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField:focus-within {
+	border-color: var(--rf-green);
+	box-shadow: 0 0 0 3px rgb(97 121 82 / 0.18);
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .uk-input:focus-visible {
+	outline: none !important;
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .stepper:focus-visible {
+	outline-offset: -2px;
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row label {
+	font-size: max(1.4rem, 12.5px);
+}
+
+section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row > div input {
+	font-size: max(1.7rem, 15px);
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+}
+
+@media only screen and (max-width: 959px) {
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField {
+		grid-template-columns: 4.8rem 1fr 4.8rem;
+		grid-template-rows: 1fr;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .stepper[data-icalc-stepper="-1"] {
+		grid-column: 1;
+		grid-row: 1;
+		border-left: 0;
+		border-right: 1px solid #e3e3e3;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField > .uk-inline {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .uk-grid > div .row .numberField .stepper[data-icalc-stepper="1"] {
+		grid-column: 3;
+		grid-row: 1;
+		border-bottom: 0;
+	}
+
+	section.investmentCalculator .container .content .calculatePanel .presets button {
+		min-height: 40px;
+	}
+}
+
+@media only screen and (max-width: 639px) {
+	section.investmentCalculator .scenarioTable :is(th, td):first-child {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		background: #fff;
+		min-width: 11rem;
+	}
+}
+
+/* Kontakty na hraně shellu: text byl odsazený margin-left:auto + 10 %,
+   formulář zarovnaný ke středu (margin-left:auto) */
+@media only screen and (min-width: 960px) {
+	section.topContact .container .uk-grid > div .text {
+		margin-left: 0;
+		margin-right: var(--rf-col-gap);
+		max-width: 60rem;
+	}
+
+	section.form .container > .content .uk-grid > div .formPack {
+		margin-left: 0;
+		max-width: 68rem;
+	}
+}
+
+/* ---- 85-audit.css ---- */
+/* ==========================================================================
+   Úpravy podle produktového auditu (Demo Brave Development, 28. 9. 2026)
+   Jen prezentace nad šablonou; doplněné prvky (mobilní lišta, odkazy v menu,
+   nápověda u vizualizace, popisky stavu) vkládá brave-refine.js.
+   ========================================================================== */
+
+/* --- Hero s panoramatem ----------------------------------------------------- */
+
+/* Text přes panoráma: piny a jejich čáry nesmí ležet přes H1 a CTA (audit: Design) */
+html.rf-on section.panoramaHero .panoramaHero__copy {
+	z-index: 40;
+	pointer-events: none;
+}
+html.rf-on section.panoramaHero .panoramaHero__copy :is(a, button, select, input) {
+	pointer-events: auto;
+}
+html.rf-on section.panoramaHero .panoramaHero__copy::before {
+	content: "";
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: min(760px, 70%);
+	z-index: -1;
+	background: linear-gradient(90deg, rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.22) 60%, transparent);
+	pointer-events: none;
+}
+
+/* Nadtitulek a perex přes oblohu: čitelnost (audit: nízký kontrast nadtitulku) */
+html.rf-on section.panoramaHero .panoramaHero__copy :is(.subtitle, .panoramaHero__lead, h1) {
+	text-shadow: 0 1px 2px rgb(0 0 0 / 0.45), 0 0 18px rgb(0 0 0 / 0.35);
+}
+html.rf-on section.panoramaHero .panoramaHero__copy .subtitle {
+	color: #fff;
+}
+
+/* Mobil: první obrazovka = H1 + perex + CTA + vyhledávání (audit: největší slabina) */
+@media (max-width: 639px) {
+	html.rf-on section.panoramaHero .panoramaHero__copy::before {
+		width: 100%;
+		background: linear-gradient(180deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.25) 70%, transparent);
+	}
+	html.rf-on section.panoramaHero .panoramaHero__lead {
+		display: block;
+		font-size: 15px;
+		line-height: 1.5;
+		margin-top: 10px;
+		max-width: 34ch;
+	}
+	html.rf-on section.panoramaHero .panoramaHero__lead br {
+		display: none;
+	}
+	/* Štítek projektu přetékal za pravý okraj */
+	html.rf-on section.panoramaHero .panoramaComplexTip {
+		display: none !important;
+	}
+}
+
+/* Vyhledávání přesunuté pod mobilní hero (JS: section.panoramaHero.rfHeroSearch) */
+html.rf-on section.panoramaHero.rfHeroSearch {
+	display: none;
+}
+@media (max-width: 639px) {
+	html.rf-on section.panoramaHero.rfHeroSearch {
+		display: block;
+		height: auto;
+		min-height: 0;
+		max-height: none;
+		overflow: visible;
+		background: var(--rf-surface);
+		color: var(--rf-ink);
+		padding: 20px var(--rf-gutter) 24px;
+		border-bottom: 1px solid var(--rf-line);
+	}
+	html.rf-on .rfHeroSearch__title {
+		margin: 0 0 12px;
+		font: 600 17px/1.3 Urbanist, system-ui, sans-serif;
+	}
+	html.rf-on section.panoramaHero.rfHeroSearch .panoramaHero__quickSearch {
+		position: static;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		width: 100%;
+		max-width: none;
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		transform: none;
+		background: none;
+		box-shadow: none;
+	}
+	html.rf-on section.panoramaHero.rfHeroSearch .panoramaHero__quickSearchItem {
+		min-width: 0;
+		padding: 10px 12px;
+		border: 1px solid var(--rf-line-strong);
+		border-radius: var(--rf-radius);
+		background: var(--rf-surface);
+	}
+	html.rf-on section.panoramaHero.rfHeroSearch .panoramaHero__quickSearchItem::before,
+	html.rf-on section.panoramaHero.rfHeroSearch .panoramaHero__quickSearchItem::after {
+		display: none;
+	}
+	html.rf-on section.panoramaHero.rfHeroSearch .panoramaHero__quickSearchSubmit {
+		grid-column: 1 / -1;
+		width: 100%;
+		height: 48px;
+		margin: 4px 0 0;
+		border-radius: var(--rf-radius);
+	}
+	html.rf-on section.panoramaHero.rfHeroSearch .panoramaHero__quickSearchMenu {
+		z-index: 60;
+	}
+}
+
+/* --- Hlavička a mobilní menu ------------------------------------------------ */
+
+/* CTA „Volné byty a ceník“ se na úzkém mobilu zalamovalo */
+@media (max-width: 479px) {
+	html.rf-on section.topBar a.button.button-main {
+		white-space: nowrap;
+		padding-inline: 12px;
+		font-size: 11px;
+		letter-spacing: 0.02em;
+	}
+}
+@media (max-width: 359px) {
+	html.rf-on section.topBar a.button.button-main {
+		display: none;
+	}
+}
+
+/* Mobilní menu: CTA a telefon (JS: .rfMenuCta) */
+html.rf-on .rfMenuCta {
+	display: grid;
+	gap: 10px;
+	margin: 24px 0 8px;
+	padding-top: 20px;
+	border-top: 1px solid var(--rf-line);
+}
+html.rf-on .rfMenuCta a {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 48px;
+	border-radius: var(--rf-radius);
+	font: 600 14px/1 Urbanist, system-ui, sans-serif;
+	text-decoration: none;
+}
+html.rf-on .rfMenuCta .rfMenuCta__main {
+	background: var(--rf-green);
+	color: var(--rf-on-green);
+}
+html.rf-on .rfMenuCta .rfMenuCta__tel {
+	border: 1px solid var(--rf-line-strong);
+	color: var(--rf-ink);
+}
+
+/* --- Sticky mobilní lišta: Zavolat · Nabídka · Prohlídka (JS: .rfMobileBar) -- */
+html.rf-on .rfMobileBar {
+	display: none;
+}
+@media (max-width: 767px) {
+	html.rf-on .rfMobileBar {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 980;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 6px;
+		padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+		background: rgb(255 255 255 / 0.96);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		box-shadow: 0 -1px 0 var(--rf-line), 0 -8px 24px rgb(0 0 0 / 0.06);
+		transition: transform var(--rf-dur-slow) var(--rf-ease-out);
+	}
+	html.rf-on .rfMobileBar a {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		min-height: 48px;
+		border-radius: var(--rf-radius);
+		color: var(--rf-ink);
+		font: 600 12px/1.1 Urbanist, system-ui, sans-serif;
+		text-decoration: none;
+	}
+	html.rf-on .rfMobileBar a.is-main {
+		background: var(--rf-green);
+		color: var(--rf-on-green);
+	}
+	html.rf-on .rfMobileBar svg {
+		width: 18px;
+		height: 18px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	html.rf-on.rf-has-mobilebar body {
+		padding-bottom: calc(64px + env(safe-area-inset-bottom));
+	}
+	/* otevřené menu / modální okno lištu schová */
+	html.rf-on.uk-offcanvas-page .rfMobileBar,
+	html.rf-on.uk-modal-page .rfMobileBar {
+		transform: translateY(110%);
+	}
+	/* přepínač náhledu nad lištu */
+	html.rf-on.rf-has-mobilebar .refineSwitch {
+		bottom: calc(72px + env(safe-area-inset-bottom));
+	}
+}
+
+/* --- Dotykové cíle (audit: 27 prvků pod 32 px) ------------------------------- */
+@media (pointer: coarse) {
+	html.rf-on .cookie-bar-modal :is(button, .button, a.button) {
+		min-height: 44px;
+	}
+	html.rf-on section.topBar .menuTop .menuLink {
+		min-width: 44px;
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+}
+
+/* --- Vizualizace domu: výběr patra ----------------------------------------- */
+
+/* Nápověda (JS: .rfVizHint) */
+html.rf-on .rfVizHint {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	margin: 0 0 14px;
+	font: 500 13px/1.4 Urbanist, system-ui, sans-serif;
+	color: var(--rf-ink-2);
+}
+html.rf-on .rfVizHint::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--rf-green);
+	box-shadow: 0 0 0 4px rgb(97 121 82 / 0.2);
+}
+html.rf-on .rfVizHint .t-touch {
+	display: none;
+}
+@media (pointer: coarse) {
+	html.rf-on .rfVizHint .t-mouse {
+		display: none;
+	}
+	html.rf-on .rfVizHint .t-touch {
+		display: inline;
+	}
+}
+
+/* Mobil: vizualizace byla jen ~200 px vysoká a překrývalo ji tlačítko */
+@media (max-width: 767px) {
+	html.rf-on section.vizualize .rfVizScroll {
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scrollbar-width: none;
+		margin-inline: calc(var(--rf-gutter) * -1);
+	}
+	html.rf-on section.vizualize .rfVizScroll::-webkit-scrollbar {
+		display: none;
+	}
+	html.rf-on section.vizualize .rfVizScroll > .maping {
+		width: 680px;
+		max-width: none;
+	}
+	html.rf-on section.vizualize p.link {
+		position: static !important;
+		transform: none !important;
+		margin-top: 16px;
+		text-align: center;
+	}
+}
+
+/* Výpis bytů: vizualizace nad nabídkou zabírala celou obrazovku */
+@media (min-width: 960px) {
+	html.rf-on section.unitsLayout section.vizualize .maping,
+	html.rf-on .unitsLayout .vizualize .maping {
+		width: min(100%, calc(56vh * 2));
+		margin-inline: auto;
+	}
+}
+
+/* --- Výpis jednotek: stav textem, ne jen tečkou ----------------------------- */
+html.rf-on .unitStateDot {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	width: auto !important;
+	height: auto !important;
+	background: none !important;
+	border: 0 !important;
+	vertical-align: middle;
+	font: 500 12px/1 Urbanist, system-ui, sans-serif;
+	white-space: nowrap;
+}
+html.rf-on .unitStateDot::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--rf-green);
+}
+html.rf-on .unitStateDot::after {
+	content: attr(aria-label);
+	color: var(--rf-ink-2);
+}
+html.rf-on .unitStateDot.is-reserved::before {
+	background: #c77e1b;
+}
+html.rf-on .unitStateDot.is-sold::before {
+	background: #c0392b;
+}
+
+/* --- Detail jednotky: místo ~20 podobných stačí 4 --------------------------- */
+html.rf-on section.unitSlider .uk-slider-items > :nth-child(n + 5) {
+	display: none !important;
+}
+
+/* --- Kontakty: fotka makléřky překrývala podtitulek -------------------------- */
+html.rf-on section.topContact p.subtitle {
+	position: relative;
+	z-index: 2;
+	margin-bottom: clamp(48px, 6vw, 96px);
+}
+
+/* --- Náběhové animace (audit: 1–3 s prázdné stránky) ------------------------ */
+html.rf-on.brickReveal [data-brick-grid] > * {
+	transition-duration: 0.18s !important;
+	transition-delay: 0s !important;
+}
+html.rf-on .brickTile {
+	opacity: 1 !important;
+}
+html.rf-on .brickLoader {
+	display: none !important;
+}
+
+/* --- Kontrast: místa, kde šablona skládá barvy z více pravidel --------------- */
+/* (zbytek generuje tools/contrast-css.mjs → 86-contrast.css) */
+
+/* Hlavní CTA v hlavičce a patičce, boční kontaktní záložky: tmavý text na zelené */
+html.rf-on section.topBar a.button.button-main,
+html.rf-on section.footerMain .footerCta,
+html.rf-on section.footerMain .footerCta span,
+html.rf-on .widget a > span,
+html.rf-on .widget a > span :is(span, i) {
+	color: var(--rf-on-green) !important;
+}
+html.rf-on section.topBar a.button.button-main :is(i, .mdi, svg) {
+	color: inherit !important;
+	fill: currentColor;
+}
+/* „Ihned rezervovat“ a další obrysová tlačítka se zeleným textem */
+html.rf-on a.button.second,
+html.rf-on .button.second {
+	color: var(--rf-green-ink) !important;
+}
+
+/* Formulářové sekce přes fotku: bílý text na světle zeleném závoji (audit) →
+   závoj tmavší zelený, bílý text projde (≥ 7:1) */
+html.rf-on section.brokerOffer::before,
+html.rf-on section.form::before {
+	background-color: #145c3b !important;
+	opacity: 0.93;
+}
+
+/* Kontakty: zelená karta makléřky s bílým textem */
+html.rf-on section.topContact .entityBox {
+	background-color: var(--rf-green-ink) !important;
+}
+
+/* Štítek projektu v panoramatu, volby výběru, plovoucí popisky polí */
+html.rf-on section.panoramaHero .panoramaComplexTip h2 {
+	color: var(--rf-green-ink) !important;
+}
+html.rf-on section.panoramaHero .panoramaComplexTip p,
+html.rf-on select option {
+	color: var(--rf-ink-2) !important;
+}
+html.rf-on .form-js-label label {
+	color: var(--rf-muted) !important;
+}
+/* Stav „Rezervace“ (oranžová na světle oranžové 2,97:1) */
+html.rf-on label.reserved {
+	color: #8a5208 !important;
+}
+/* Cookie lišta: zelený nadpis */
+html.rf-on .cookie-bar-modal .main-title {
+	color: var(--rf-green-ink) !important;
+}
+
+/* --- Plovoucí kontakt (e-mail, telefon) vpravo — vlevo překrýval perex a CTA hero */
+html.rf-on .widget {
+	left: auto;
+	right: 0;
+	align-items: flex-end;
+}
+html.rf-on .widget a {
+	transform: translateX(calc(100% - 4.4rem));
+	justify-content: flex-start;
+}
+html.rf-on .widget a:hover,
+html.rf-on .widget a:focus-visible {
+	transform: translateX(0);
+}
+html.rf-on .widget a > span {
+	flex-direction: row;
+	border-radius: 8px 0 0 8px;
+	padding: 1.3rem 2rem 1.3rem 1.2rem;
+}
+html.rf-on .widget a i.mdi {
+	margin: 0 1.5rem 0 0;
+}
+
+/* ==========================================================================
+   Homepage pro prezentaci šablony (JS: videoHero, buildingFilter, leadBlock)
+   ========================================================================== */
+
+/* --- Hero s videem ---------------------------------------------------------- */
+html.rf-on section.panoramaHero.rfVideoHero {
+	background: #1d2a22;
+}
+html.rf-on .rfVideoHero__video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	z-index: 0;
+}
+html.rf-on .rfVideoHero__shade {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: linear-gradient(0deg, rgb(0 0 0 / 0.35), transparent 45%);
+}
+html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copy {
+	z-index: 40;
+}
+
+/* Vyhledávací lišta na desktopu vpravo dole v hero */
+@media (min-width: 1200px) {
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__quickSearch {
+		top: auto;
+		bottom: clamp(24px, 5vh, 56px);
+		left: auto;
+		right: var(--rf-gutter);
+		transform: none;
+		width: min(1040px, calc(100% - 2 * var(--rf-gutter) - 560px));
+		max-width: none;
+	}
+}
+@media (min-width: 640px) and (max-width: 1199px) {
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__quickSearch {
+		top: auto;
+		bottom: 24px;
+		width: calc(100% - 2 * var(--rf-gutter));
+	}
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copy {
+		padding-bottom: 120px;
+	}
+}
+/* pět polí místo čtyř: užší položky */
+html.rf-on section.panoramaHero .panoramaHero__quickSearchItem {
+	min-width: 0;
+}
+html.rf-on section.panoramaHero .panoramaHero__quickSearchOption[hidden] {
+	display: none;
+}
+
+/* --- Kontaktní formulář s makléřem nad patičkou ------------------------------ */
+html.rf-on .rfLead__card {
+	display: flex;
+	margin-top: 0;
+	gap: 20px;
+	align-items: center;
+	max-width: 520px;
+	margin-left: auto;
+	padding: 24px;
+	border-radius: var(--rf-radius-lg);
+	background: var(--rf-surface);
+	color: var(--rf-ink);
+	box-shadow: var(--rf-shadow-md);
+}
+html.rf-on .rfLead__card img {
+	flex: none;
+	width: 120px;
+	height: 140px;
+	object-fit: cover;
+	object-position: top;
+	border-radius: var(--rf-radius);
+	background: var(--rf-green-soft);
+}
+html.rf-on .rfLead__role {
+	margin: 0 0 4px;
+	font: 600 1.2rem/1.3 Urbanist, system-ui, sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--rf-green-ink);
+}
+html.rf-on .rfLead__name {
+	margin: 0 0 12px;
+	font: 600 2.2rem/1.2 Urbanist, system-ui, sans-serif;
+	color: var(--rf-ink);
+}
+html.rf-on .rfLead__card a {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 32px;
+	font: 500 1.5rem/1.3 Urbanist, system-ui, sans-serif;
+	color: var(--rf-green-ink);
+	text-decoration: none;
+}
+html.rf-on .rfLead__card a:hover {
+	text-decoration: underline;
+}
+@media (max-width: 959px) {
+	/* sloupce pod sebou: karta stejně široká a zarovnaná jako formulář (formPack 61rem, na střed) */
+	html.rf-on .rfLead__card {
+		width: 100%;
+		max-width: 61rem;
+		margin: 40px auto 0;
+	}
+}
+@media (max-width: 479px) {
+	html.rf-on .rfLead__card {
+		gap: 14px;
+		padding: 16px;
+		align-items: flex-start;
+	}
+	html.rf-on .rfLead__card img {
+		width: 84px;
+		height: 100px;
+	}
+	html.rf-on .rfLead__name {
+		font-size: 1.9rem;
+		margin-bottom: 6px;
+	}
+	html.rf-on .rfLead__card a {
+		font-size: 1.4rem;
+		word-break: break-word;
+	}
+}
+
+/* Lišta dole v hero: nabídky se otevírají nahoru (dolů by je hero ořízlo) */
+html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__quickSearchMenu {
+	top: auto;
+	bottom: calc(100% + 10px);
+}
+
+/* --- Panoráma v sekci Lokalita (místo mapy) --------------------------------- */
+html.rf-on section.homepageInteractive .rfPanoBox {
+	position: relative;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+	border-radius: var(--rf-radius-lg);
+}
+html.rf-on section.homepageInteractive .rfPanoBox > section.panoramaHero {
+	height: clamp(460px, 72vh, 760px);
+	min-height: 0;
+	max-height: none;
+	border-radius: var(--rf-radius-lg);
+	isolation: isolate;
+}
+@media (max-width: 959px) {
+	html.rf-on section.homepageInteractive .rfPanoBox > section.panoramaHero {
+		height: 64svh;
+		min-height: 400px;
+	}
+}
+@media (max-width: 639px) {
+	html.rf-on section.homepageInteractive .rfPanoBox,
+	html.rf-on section.homepageInteractive .rfPanoBox > section.panoramaHero {
+		border-radius: 0;
+	}
+}
+
+/* --- Body lokality: ikony jako piny panoramatu místo fajfek ------------------ */
+html.rf-on section.homepageInteractive .container .uk-grid > div .content .text ul li.rfLocItem {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-bottom: 12px;
+}
+html.rf-on section.homepageInteractive .container .uk-grid > div .content .text ul li.rfLocItem::before {
+	display: none;
+}
+html.rf-on .rfLocIcon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 3.4rem;
+	height: 3.4rem;
+	border-radius: 50%;
+	background: var(--rf-green);
+	color: #fff; /* jako piny panoramatu */
+	font-size: 1.8rem;
+	box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgb(97 121 82 / 0.35);
+}
+html.rf-on section.homepageInteractive .container .uk-grid > div .content .text ul {
+	padding-left: 0;
+	margin-left: 0;
+}
+
+/* --- Vizualizace domu: pulzující obrys budov (JS: .rfHouseOutline) ----------- */
+html.rf-on section.vizualize .maping {
+	position: relative;
+}
+html.rf-on .rfHouseOutline {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	aspect-ratio: 2 / 1;
+	height: auto;
+	z-index: 5;
+	pointer-events: none;
+	overflow: visible;
+}
+html.rf-on .rfHouseOutline rect {
+	fill: rgb(97 121 82 / 0.14);
+	stroke: #617952;
+	stroke-width: 4;
+	vector-effect: non-scaling-stroke;
+	animation: rfHousePulse 2.4s ease-in-out infinite;
+	transition: opacity 0.4s ease;
+}
+@keyframes rfHousePulse {
+	0%, 100% { fill: rgb(97 121 82 / 0.06); stroke-opacity: 0.45; }
+	50% { fill: rgb(97 121 82 / 0.26); stroke-opacity: 1; }
+}
+/* po prvním najetí převezme zvýraznění pater šablona */
+html.rf-on .maping.rf-touched .rfHouseOutline rect {
+	animation: none;
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	html.rf-on .rfHouseOutline rect {
+		animation: none;
+		fill: rgb(97 121 82 / 0.16);
+	}
+}
+
+/* Sekce převzatá z Kontaktů: na homepage chyběly boční okraje kontejneru */
+html.rf-on section.form.rfLead .container {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: var(--rf-shell);
+	margin-inline: auto;
+	padding-inline: var(--rf-gutter);
+}
+html.rf-on .rfLead__card {
+	box-sizing: border-box;
+}
+@media (min-width: 960px) and (max-width: 1199px) {
+	html.rf-on section.form.rfLead .container > .content > div > div:first-child {
+		width: 58%;
+	}
+	html.rf-on section.form.rfLead .container > .content > div > div:last-child {
+		width: 42%;
+	}
+}
+
+/* Formulář s makléřkou: výšku určuje obsah, ne poměr stran fotky na pozadí
+   (šablona: výška = fotka 869 px + 2× 64 px, formulář absolutně se 130 px nad sebou) */
+html.rf-on section.form.rfLead {
+	height: auto;
+	min-height: 0;
+	max-height: none;
+	padding: clamp(48px, 5vw, 80px) 0;
+	overflow: hidden;
+}
+html.rf-on section.form.rfLead > picture,
+html.rf-on section.form.rfLead > picture img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+html.rf-on section.form.rfLead > picture {
+	z-index: 0;
+}
+html.rf-on section.form.rfLead .container {
+	position: relative;
+	z-index: 2;
+	inset: auto;
+	transform: none;
+}
+html.rf-on section.form.rfLead .container > .content {
+	padding-top: 0;
+}
+html.rf-on section.form.rfLead .container > .content > div {
+	align-items: center;
+}
+
+/* ==========================================================================
+   Výpis bytů: fotka domu přes celou šířku, v panelu zmenšená fotka (JS: listingViz)
+   ========================================================================== */
+html.rf-on .rfMiniViz {
+	display: none;
+}
+@media (min-width: 960px) {
+	html.rf-on.rf-listing-viz .frontend-reounitlist .unitsLayout .layoutGrid,
+	html.rf-on.rf-listing-viz .unitsLayout .layoutGrid {
+		grid-template-areas: "viz viz" "side main";
+	}
+	/* fotka přes celou šířku okna, výška nejvýš na obrazovku (ořez na střed — image mapa sedí dál) */
+	html.rf-on.rf-listing-viz .unitsLayout .layoutGrid > .layoutViz {
+		width: 100vw;
+		margin-left: calc(50% - 50vw);
+	}
+	html.rf-on.rf-listing-viz .layoutViz section.vizualize,
+	html.rf-on.rf-listing-viz .layoutViz section.vizualize .container {
+		max-width: none;
+		width: 100%;
+		padding-inline: 0;
+		margin: 0;
+	}
+	html.rf-on.rf-listing-viz .layoutViz section.vizualize .rfVizHint {
+		padding-inline: var(--rf-gutter);
+	}
+	html.rf-on.rf-listing-viz .layoutViz section.vizualize .maping {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		width: 100% !important;
+		max-height: calc(100vh - var(--rf-header-h) - 64px);
+		overflow: hidden;
+		border-radius: 0 !important;
+	}
+	html.rf-on.rf-listing-viz .layoutViz section.vizualize .maping > picture {
+		flex: none;
+		width: 100%;
+	}
+	html.rf-on.rf-listing-viz .layoutViz .rfHouseOutline {
+		top: 50%;
+		transform: translateY(-50%);
+	}
+	html.rf-on.rf-listing-viz body,
+	html.rf-on.rf-listing-viz {
+		overflow-x: clip;
+	}
+
+	/* panel: místo schématu zmenšená fotka, objeví se po odscrollování velké */
+	html.rf-on.rf-listing-viz .layoutSide > .wireframe {
+		display: none;
+	}
+	html.rf-on.rf-listing-viz .rfMiniViz {
+		display: block;
+		margin: 20px 0 8px;
+		max-height: 0;
+		opacity: 0;
+		overflow: hidden;
+		transform: translateY(-6px);
+		transition: max-height 0.45s var(--rf-ease-out), opacity 0.3s ease, transform 0.35s var(--rf-ease-out);
+	}
+	html.rf-on.rf-listing-viz.rf-mini-on .rfMiniViz {
+		max-height: 400px;
+		opacity: 1;
+		transform: none;
+	}
+	html.rf-on .rfMiniViz__label {
+		margin: 0 0 8px;
+		font: 600 1.2rem/1.3 Urbanist, system-ui, sans-serif;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--rf-muted);
+	}
+	html.rf-on .rfMiniViz__frame {
+		position: relative;
+		border-radius: var(--rf-radius);
+		overflow: hidden;
+		box-shadow: var(--rf-shadow-sm);
+	}
+	html.rf-on .rfMiniViz__frame img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+	html.rf-on .rfMiniViz__frame svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	html.rf-on .rfMiniViz polygon {
+		fill: transparent;
+		stroke: transparent;
+		stroke-width: 2;
+		vector-effect: non-scaling-stroke;
+		transition: fill 0.18s, stroke 0.18s;
+	}
+	html.rf-on .rfMiniViz a:hover polygon,
+	html.rf-on .rfMiniViz a.is-on polygon {
+		fill: rgb(97 121 82 / 0.45);
+		stroke: #617952;
+	}
+}
+
+/* ---- 86-contrast.css ---- */
+/* GENEROVÁNO tools/contrast-css.mjs — needitovat ručně.
+   Kontrast textu WCAG AA nad barvami šablony (viz popis v generátoru). */
+:where(html.rf-on) .overviewPack .content .checkbox label a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuTop .menuLink .icon svg {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuTop .menuLink .icon .number {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuTop .menuLink .text {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuTop .languageSwitcher>a span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuTop .languageSwitcher .uk-drop ul li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuTop .languageSwitcher .uk-drop ul li.uk-active a {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.topBar .container .uk-grid>div .menuBar .uk-navbar.menu-text>div .uk-navbar-nav li a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .uk-offcanvas-bar .top .menuLink {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .uk-offcanvas-bar .top .menuLink>.icon .number {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .uk-offcanvas-bar .top .languageSwitcher .uk-drop ul li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .uk-offcanvas-bar .top .languageSwitcher .uk-drop ul li.uk-active a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .uk-offcanvas-bar .top .languageSwitcher .language li+li:before {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .uk-offcanvas-bar .offcanvasMainNav>li.uk-active>a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .button, :where(html.rf-on) .uk-button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .button:hover, :where(html.rf-on) .uk-button:hover {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) .button.second, :where(html.rf-on) .uk-button.second {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .button.second:hover, :where(html.rf-on) .uk-button.second:hover {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) .button-flat {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .button-flat:hover {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) .qtipBox-bodyPart .value {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .qtipBox-bodyPart .value.greeny {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .qtipBox-bodyPart .qtipBox-rooms>.label {
+    color: var(--rf-muted)
+}
+@media only screen and (max-width:959px) {
+    :where(html.rf-on) body.frontend-contact section.form .container>.content .formPack form>.uk-grid>div:nth-last-child(2)>.submitPack:hover input[type="submit"] {
+        color: var(--rf-green-ink)
+    }
+}
+@media only screen and (max-width:959px) {
+    :where(html.rf-on) body.frontend-contact section.form .container>.content .formPack form>.uk-grid>div:nth-last-child(2)>.submitPack input[type="submit"]:hover {
+        color: var(--rf-on-green) !important
+    }
+}
+:where(html.rf-on) .addressCard a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.topContact .container .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.faqPack .container .faqTabs li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.faqPack .container .faqList li .uk-accordion-title .ico i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.slideshow .uk-slideshow>div .uk-slideshow-items li .slide>div .text label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .textPanel h2 span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .textPanel ul li {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .textPanel p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .tab .tab__count {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .tab.active .tab__count {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .tab.isEmpty {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .tab.isEmpty .tab__count {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .building .count strong {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .stats .price, :where(html.rf-on) section.homepageGallery .container .content .uk-grid>div .dispositionPanel .stats .area {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contentSlider .container .top .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentSlider .container .top h2 span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentSlider .container .uk-slider>div .uk-slider-container .uk-slider-items>div .slide .uk-grid>div .text label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentSlider .container .uk-slider>div .uk-slider-container .uk-slider-items>div .slide .uk-grid>div .text p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.vizualize .container .top .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.dispositionShowcase .top .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.dispositionShowcase .tab .tab__count {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.dispositionShowcase .tab.active .tab__count {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.dispositionShowcase .tab.isEmpty {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.dispositionShowcase .tab.isEmpty .tab__count {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.dispositionShowcase .stats .price, :where(html.rf-on) section.dispositionShowcase .stats .area {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.dispositionShowcase .building .count strong {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.benefits .container .content .uk-grid>div .benefitsBox p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.homepageInteractive .container .uk-grid>div .content .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.homepageInteractive .container .uk-grid>div .content .text ul li {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.newsExtract .container .content .top .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.newsExtract .container .content .top .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.newsExtract .newsExtractCard .newsExtractCard__meta {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.newsExtract .newsExtractCard>p:not(.newsExtractCard__meta) {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newsBox .content .date {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newsBox .content p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.homepageGallery .container .galleryColumn .galleryColumn__heading .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .homepageGalleryDispositionGrid section.dispositionShowcase .stats .count strong {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.form .container>.content .uk-grid>div .formPack form .uk-grid>div .submitPack input[type="submit"] {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.form .container>.content .uk-grid>div .formPack form .uk-grid>div .submitPack:hover input[type="submit"] {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.form .container>.content .uk-grid>div .entityBox .content p {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.form .container>.content .uk-grid>div .entityBox .content p.subtitle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.form .container>.content .uk-grid>div .entityBox .content p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.form .container>.content .uk-grid>div .entityBox .content p a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogDetail .container .text p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.newsList .uk-subnav.newsFilter li:hover a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.newsList .newsBox .content .date {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.newsList .newsBox .content p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageTopPanel.pageTopPanel--investment .container .uk-grid>div .text .investmentCalculatorIntro {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageTopPanel .container .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-mapmarker section.pageTopPanel .backLink a, :where(html.rf-on) body.frontend-news section.pageTopPanel .backLink a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-mapmarker section.pageTopPanel .backLink .chevronBack, :where(html.rf-on) body.frontend-news section.pageTopPanel .backLink .chevronBack {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contentPage .container .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentPage .container .uk-grid>div .text ul.checkList li:before {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.videoContent .container .uk-grid>div .video.videoFacade .playIcon {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.videoContent .container .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentGallery .container .uk-switcher .galleryGrid-arrows button:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.virtualTour .container .top .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.virtualTour .tourVideo .play {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.mapContent .container .mapWrapper .legend p label:before {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .mapPopup-address {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .mapPopup-more {
+    color: var(--rf-on-green) !important
+}
+@media only screen and (max-width:1199px) {
+    :where(html.rf-on) section.form.contactSection .container>.content .formPack form>.uk-grid>div:nth-last-child(2)>.submitPack:hover input[type="submit"] {
+        color: var(--rf-green-ink)
+    }
+}
+@media only screen and (max-width:1199px) {
+    :where(html.rf-on) section.form.contactSection .container>.content .formPack form>.uk-grid>div:nth-last-child(2)>.submitPack input[type="submit"]:hover {
+        color: var(--rf-on-green) !important
+    }
+}
+:where(html.rf-on) section.form.contactSection .contacts-wrapper .ico {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentSubPage .container .content .uk-switcher .uk-grid>div .pageConBox .pageConBox__distance {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentSubPage .container .content .uk-switcher .uk-grid>div .pageConBox .pageConBox__distanceSep {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contentSubPage .container .content .uk-switcher .uk-grid>div .pageConBox p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.subpageExtract .container .content .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.subpageExtract .container .content>.uk-grid>div .subpageBox p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contentBanner .container>.uk-grid>div .text>.uk-grid>div .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.otherProjects .top .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.otherProjects .projectSlider-nav:hover {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.otherProjects .projectCard-body .pill {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.otherProjects .projectCard-body .loc i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.otherProjects .projectCard-body .desc {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.otherProjects .projectCard-body .checkList li i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reobroker section.pageTop.makler .jobPosition {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reobroker section.pageTop.makler .contactBanner .contactBanner-wrapper a.next-link:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reobroker .section-title .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reobroker .productBox .top .label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reobroker .productBox .bottom p.attribute {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.comparisonSlider .container>.uk-grid>div .uk-slider>div .uk-slider-container .uk-slider-items>div .comparisonSlideBottom .blurPrice {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.comparisonSlider .container>.uk-grid>div .uk-slider>div .uk-slider-container .uk-slider-items>div .comparisonSlideBottom .buttonWrapper .remove {
+    color: var(--rf-green-ink)
+}
+@media only screen and (max-width:639px) {
+    :where(html.rf-on) section.comparisonSlider .container .uk-slider-container .uk-slider-items>div .comparisonSlideBottom>div:not(.buttonWrapper)::before {
+        color: var(--rf-muted)
+    }
+}
+:where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .text .title p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid>div .social h3, :where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid>div .social .shareTrigger {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid>div .social .shareTrigger:hover, :where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid>div .social .shareTrigger:focus-visible {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid>div .social a i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid .pdf a, :where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid .pdf button {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid .pdf a i, :where(html.rf-on) section.favouriteTop .container .content>.uk-grid>div .socialPack .uk-grid .pdf button i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.favoriteList .container .content .emptyNote {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.form .formPack .selectedUnits button.unitChip .x {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reoprojectlist .label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reoprojectlist .label.project-status-finished {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reoprojectlist section.projectHero .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reoprojectlist section.projectHero .text .content {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reoprojectlist section.sidePhoto.developmentProject .projectCard-body .loc i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reoprojectlist section.sidePhoto.developmentProject .projectCard-body .desc {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reoprojectlist section.sidePhoto.developmentProject .projectCard-body .checkList li i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.projectListTitle .container .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.filterPanel .container .content .row .col .Noui .input-slider-width .input-slider-result>div .com, :where(html.rf-on) section.filterPanel .container .content .row .col .Noui .input-slider-width .input-slider-result>div .unit {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.filterPanel .container .content .row .col .last a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.filterPanel .container .content .row .col .last a i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.extractFlat .container .content .uk-grid>div .next a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.extractFlat .container .content .listExtract .extract .flatRow div.col6 label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .flatCard .top label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .flatCard .title p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .flatCard .title p span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .flatCard .price span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .flatCard .price .blurPrice {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .flatCard .catalog a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .flatListing .flatListingHead .viewToggle label:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) #flatViewTiles:checked~.container .viewToggle label.tiles, :where(html.rf-on) #flatViewList:checked~.container .viewToggle label.list {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) section.floorExtract .container .content .backLink a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.floorExtract .container .content .backLink a i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.floorExtract .container .content .floorBtn.is-active {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) #viz-cursor .viz-cursor-inner {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) #viz-cursor .viz-cursor-label {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .frontend-reounit .planBox__hint {
+    color: var(--rf-muted)
+}
+@media only screen and (max-width:639px) {
+    :where(html.rf-on) .frontend-reounit .unitStickyCta {
+        color: var(--rf-on-green)
+    }
+}
+:where(html.rf-on) section.purchaseSteps .container>.subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reounit .videoContent .addressCard a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reounit section.pageTopPanel .container .uk-grid>div .backLink a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reounit section.pageTopPanel .container .uk-grid>div .backLink a .chevronBack {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.unitDetail .container .content .uk-grid>div .text .top .watch span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.unitDetail .container .content .uk-grid>div .text .awai span.green {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.calculator .container .content .top .title .subtitle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.calculator .container .content .calculatePanel .uk-grid>div .row label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.calculator .container .content .calculatePanel .uk-grid>div .row>div span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.calculator .container .content .calculatePanel .bottom p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.calculator .container .content .calculatePanel .bottom p span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .top .title .subtitle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .top .toggleIcon {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .presets>span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .presets button.active {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .uk-grid>div .row label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .uk-grid>div .row .numberField .stepper {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .uk-grid>div .row .numberField .stepper:hover {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .uk-grid>div .row>div span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .phaseSwitch .phaseSwitch__label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .phaseSwitch button {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .results .resultBox strong {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .results .resultBox .breakdown {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .results .resultBox .breakdown .sep {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .chartSection .fvTable th {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .chartSection .fvTable td.risk {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .scenarioSection .scenarioTable th {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.investmentCalculator .container .content .calculatePanel .scenarioSection .scenarioTable td:first-child {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.unitSlider .container .content>.subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .reoReservation-modal .reoReservation-copy .reoReservation-serious {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoReservation-modal .reoReservation-copy .reoReservation-conditions {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoReservation-modal .reoReservation-form label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoReservation-modal .reoReservation-form .reoReservation-submit .button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .reoReservation-modal .reoReservation-form .reoReservation-gdpr {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoReservation-modal .reoReservation-form .reoReservation-gdpr a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox>.icon {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text .subtitle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text form .uk-grid>div fieldset label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text form .uk-grid>div .submitPack:hover, :where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text form .uk-grid>div .submitPack:active, :where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text form .uk-grid>div .submitPack:focus-within {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text form .uk-grid>div.uk-width-1-1 p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .top .uk-grid>div .watchBox .text form .uk-grid>div.uk-width-1-1 p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .modalWatchdog .uk-modal-dialog .unitExtract .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.brokerOffer .form button[type="submit"], :where(html.rf-on) section.brokerOffer .form input[type="submit"], :where(html.rf-on) section.brokerOffer .form .button {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) section.brokerOffer .form button[type="submit"]:hover, :where(html.rf-on) section.brokerOffer .form input[type="submit"]:hover, :where(html.rf-on) section.brokerOffer .form .button:hover {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) section.brokerOffer .form .submitPack p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.brokerOffer .colleagueBox .colleagueBoxTop .about .perex {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.brokerOffer .colleagueBox .colleagueBoxTop .about a.next-link:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.unitReasons .top .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.unitReasons .reason .reason__delta {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.unitReasons .reason .reason__note {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.unitDetail .container .content .uk-grid>div .text .price strong {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reounitlist section.projectListTitle .container .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .frontend-reounitlist .unitsFilter .floorPlansToggle .switch__label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .frontend-reounitlist .vizualizeHideSlot .vizualizeHide {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPanel .filterLabel {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPanel .viewToggle a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .reoUnitListShareModal .modalHead .legend {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoUnitListShareModal .copyLink .copyLink__button {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoUnitListShareModal .copyLink .copyLink__button.is-copied {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .reoUnitListShareModal .modalFoot .dataNotice {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .reoUnitListShareModal .modalSuccess .icon {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .reoUnitListShareModal .modalSuccess p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .unitsTableSection .unitsTable .tRow.tHead {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .unitsTableSection .unitsTable .tRow .cName a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .unitsTableSection .unitsTable .tRow .cPrice .blurPrice {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .unitsTableSection .unitsTable .tRow .cState label {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .unitsTableSection .unitsTable .tRow .cAction .button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .unitsTableSection .unitsTable .tRow.sold .cName {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .unitsTableSection .loadMore .button, :where(html.rf-on) .unitsTableSection .loadMore input[type="submit"], :where(html.rf-on) .unitsTableSection .loadMore button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .blogBox .date p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .blogBox .date p span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .blogBox .content .topTitle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .blogBox .content>p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .blogBox .content button {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .blogBox2 .text button {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .productBox .top .comparator:hover svg {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .productBox .bottom .basketPack>div form .number .number-input .buttons button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .productBox .bottom .pricePack .uk-grid>div .markBox .mark {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .productBox .bottom .pricePack .uk-grid>div .markBox .stock .green {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .productBox .bottom .pricePack .uk-grid>div .priceBox .old {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .referenceBox .author {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .basketDrop .uk-dropdown .uk-nav li .shopping-cart-item .uk-grid>div .remove i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .basketDrop .uk-dropdown .uk-nav li .bottomButton input[type="submit"] {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.forum .consulting .top .sorting .uk-drop ul li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .signModal .uk-modal-dialog .uk-modal-header p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .signModal .uk-modal-dialog .uk-modal-body form p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .signModal .uk-modal-dialog .uk-modal-body form .row .facebook {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .newFilter .filterPack .filterClose i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .newFilter .filterPack .filterTop {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .newFilter .filterPack .filterTop:hover {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) .newFilter .filterPack .filterTop.second {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .newFilter .filterPack .filterTop.second:hover {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .categories .uk-accordion>li .uk-accordion-content ul li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .selectedFilters .row {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .price .Noui .input-slider-width .input-slider-result>div .com {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markPack label.end, :where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markPack button.end {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markSearch input[type="search"]::-webkit-input-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markSearch input[type="search"]::-moz-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markSearch input[type="search"]:-ms-input-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markSearch input[type="search"]:-moz-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .newFilter .filterPack .filterPackContent .mark .markBox .row span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .buttons .cart-total .total h3 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .buttons .cart-total .total .price-total span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .buttons .cart-total .total .price-total-with-vat span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total .total .price-total {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total .total .price-total-with-vat {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .deleteAll {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .deleteAll i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleTitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleTitle i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleContent input[type="text"]::-webkit-input-placeholder, :where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleContent input[type="text"]::-moz-placeholder, :where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleContent input[type="text"]:-ms-input-placeholder, :where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleContent input[type="text"]:-moz-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div>.content .sale .saleContent a.check {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-total>.uk-grid>div .driveFree .uk-grid>div .content p.price {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-info table tbody tr td.description h3 a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-info table tbody tr td.unit span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.basketList .container .extract .cart-info table tbody tr td.count .spinner .nav .counter-controller {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.blogPack .container .blogExtract>.uk-grid>div>.text>p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogPack .container .blogExtract>.uk-grid>div .categoryBlog ul li:hover a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogDetailContent .container .text p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogDetailContent .container .text p a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.categoryExtract>.uk-grid>div .extractTop .searchResult {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.categoryExtract>.uk-grid>div .extractTop .sorting .uk-drop ul li a:after, :where(html.rf-on) section.categoryExtract>.uk-grid>div .extractTop .sorting .uk-drop ul li label:after {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.categoryExtract>.uk-grid>div .extractTop .sorting .uk-drop ul li a:hover, :where(html.rf-on) section.categoryExtract>.uk-grid>div .extractTop .sorting .uk-drop ul li label:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.subcategoryPack .container .uk-grid>div .subBox:hover h3 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.subcategoryPackVersion .container .uk-grid>div .subBox2 .text p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPackContent .selectedFilters .row {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .filterPackContent .price .Noui .input-slider-width .input-slider-result>div .com {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPackContent .mark .markPack label.end {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .filterPackContent .mark .markSearch input[type="search"]::-webkit-input-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPackContent .mark .markSearch input[type="search"]::-moz-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPackContent .mark .markSearch input[type="search"]:-ms-input-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPackContent .mark .markSearch input[type="search"]:-moz-placeholder {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .filterPackContent .mark .markBox .row span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .formPack>p {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .formPack form .uk-grid>div fieldset label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .formPack form .uk-grid>div fieldset.sucess i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .formPack form .uk-grid>div p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .formPack form .uk-grid>div p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text>a {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text>a:hover {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text>a.second {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text>a.second:hover {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .uk-grid>div a {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .uk-grid>div a:hover {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .uk-grid>div a.second {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .uk-grid>div a.second:hover {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .branch h3 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contactPack .uk-grid>div .text .branch .row>span:first-of-type i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.entityContact .container .uk-grid>div .entityPack .text h3 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.entityContact .container .uk-grid>div .entityPack .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.entityContact .container .uk-grid>div .entityPack .text p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.entityContact .container .uk-grid>div .entityPack .text p a span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.customer .container .form-my-account .topBar .uk-grid>div .switcherTop li a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.customer .container .form-my-account .topBar .uk-grid>div .switcherTop li.uk-active a {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.customer .container .form-my-account .topBar .uk-grid>div .switcherTop li:hover a {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.customer .container .form-my-account .topBar .uk-grid>div .logout a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.customer .container .form-my-account .topBar .uk-grid>div .logout a i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.customer .container .content .bottom .listContentCustomer .content.product .switcherPackList .switcherTop li a i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.customer .container .content .bottom .listContentCustomer .content.product .switcher .listContent .extract table tbody tr td.unit span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) .deliveryAccordion li .uk-accordion-title {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.productSwich .container .filterTop a {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.contentSection .container .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.contentSection .container .uk-grid>div .text h3 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.categoryPack .container .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.calendars .container .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.calendars .container .uk-grid>div .newsPack .newsBox .newsBoxContent .row .col3 a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.calendars .container .uk-grid>div .newsPack .newsNav .up i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.calendars .container .uk-grid>div .newsPack .newsNav .down i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.calendars .container .uk-grid>div .newsPack .newsNav h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.referenceSlider .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.referenceSlider .sliderPack .uk-slider>div .navigate a i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.referenceSlider .sliderPack .navRightBar h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.referenceSlider .container .uk-slider>div .navigation a i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.referenceSlider .container .navigBar h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.aboutFirm .container .content .uk-grid>div .text .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.threeBanners .container .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogSlider .container .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogSlider .container .navigBar h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.blogSlider .container .uk-slider>div .navigation a i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogPack .uk-grid>div .blogBoxSec .date p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogPack .uk-grid>div .blogBoxSec .date p span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogPack .uk-grid>div .blogBoxSec .text .topTitle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogPack .uk-grid>div .blogBoxSec .text button {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogNavigate .up i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogNavigate .down i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.blogSliderVertical .container .content .blogSlidePack .blogNavigate h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageConnection .container .pdfPack .uk-grid>div .pdfBox a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageConnection .container .pdfPack .uk-grid>div .pdfBox a span.ico svg {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageConnection .container .pdfPack .uk-grid>div .pdfBox a span.text {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageConnection .container .pdfPack .uk-grid>div .pdfViewBox p {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageConnection .container .videoPack .uk-grid>div .rightSide .newNav .up i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageConnection .container .videoPack .uk-grid>div .rightSide .newNav .down i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageConnection .container .videoPack .uk-grid>div .rightSide .newNav h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageConnection .gallery .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.gallery .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.lexiconPack .container .lexiconExtract .uk-grid>div .dictionary-letter-list li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.lexiconContent .container .content .uk-grid>div .button.second:hover {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.lexiconDetail .container .topExtract .dictionary-pagination-wrapper a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.lexiconDetail .container .topExtract .dictionary-pagination-wrapper a.active {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.lexiconDetail .container .topExtract .dictionary-pagination-wrapper a:hover {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.lexiconDetail .container .bottom h2 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.confirmation .container .content .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageContent .container .text p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageContent .container .text p a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageContent.pageContent--legal .container .text a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageForm .container .formPack>p {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageForm .container .formPack form .uk-grid>div fieldset label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageForm .container .formPack form .uk-grid>div fieldset.sucess i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.pageForm .container .formPack form .uk-grid>div p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.pageForm .container .formPack form .uk-grid>div p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .verticalSlider .navig .up i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .verticalSlider .navig .down i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .verticalSlider .navig h3 {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .titlePanel .icons #frm-printPDFForm:hover button i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .titlePanel .icons .letThemKnow:hover i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .titlePanel .icons .variantComparison:hover button i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .textBox .link {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .textBox .link i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .variants .row .variantDrop .uk-card ul li a:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .variants .row.end p span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .content .addBasket .basketPack .number .number-input .buttons button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .variantPanel .variantRow .top .col p span.green {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .variantPanel .variantRow .top .col p span.green i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productDetail .container>.uk-grid>div .variantPanel .variantRow .bottom .number .number-input .buttons button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.productContent .container>.content .uk-grid>div .textContent .uk-switcher li .con .uk-grid>div .pdf i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productContent .container>.content .uk-grid>div .textContent .uk-switcher li .con .uk-grid>div .pdf:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productContent .container>.content .uk-grid>div .textContent .uk-accordion li .uk-accordion-content .uk-grid>div .pdf i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productContent .container>.content .uk-grid>div .textContent .uk-accordion li .uk-accordion-content .uk-grid>div .pdf:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.productLine .container .subtitle {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.referenceTop .container .top .text>p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.referenceMap .mapPack .mapInfo p label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.registerPack .container form>.uk-grid>div .uk-grid>div .row fieldset .mdi {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.registerPack .container form>.uk-grid>div .uk-grid>div .row fieldset label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.searchPage .container .uk-switcher li>h2 {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.searchPage .container .uk-switcher li .subBox .text p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.shipping-payment .container .uk-grid>div .shipping-container .underRow .content .uk-grid>div .contact p i, :where(html.rf-on) section.shipping-payment .container .uk-grid>div .payment-container .underRow .content .uk-grid>div .contact p i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.shipping-payment .container .uk-grid>div .shipping-container .underRow .content .uk-grid>div .contact p a, :where(html.rf-on) section.shipping-payment .container .uk-grid>div .payment-container .underRow .content .uk-grid>div .contact p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.shipping-payment .container .uk-grid>div .shipping-container .underRow .content .uk-grid>div .contact p a i, :where(html.rf-on) section.shipping-payment .container .uk-grid>div .payment-container .underRow .content .uk-grid>div .contact p a i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.shipping-payment .container .uk-grid>div .shipping-container .underRow .content .uk-grid>div .contact p a span, :where(html.rf-on) section.shipping-payment .container .uk-grid>div .payment-container .underRow .content .uk-grid>div .contact p a span {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.signPack .container .top p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.signPack .container .form form .row p a {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) section.signPack .container .form form .row .facebook {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) section.lostPassword .container form .row fieldset .mdi {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.lostPassword .container form .row fieldset label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) section.grader .container .graderPack .uk-grid>div .uk-slider .uk-slider-items li .graderBox form .number .number-input .buttons button {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) body section.form .contactPersonPanel .about .perex {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body section.form .contactPersonPanel .about a.next-link {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .atr>span+span::before {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .atr.atr--features {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__reserve .reoReservation-open {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .catalogSheet .catalogSheet__button {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__watch .watch {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__state {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__price .blurPrice {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__perMeter {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__monthly .note {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__broker .buyPanel__brokerPhoto.is-initials {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .buyPanel__broker .buyPanel__brokerText .label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .unitSaves .unitSave {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .text .unitSaves .unitSave.active {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .buyPanel__addons li.is-included {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .buyPanel__addonName::before {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .buyPanel__addons li.is-included .buyPanel__addonName::before {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-reounit section.pageTopPanel .container .uk-grid>div .buyPanel__addonNote {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .flatCard .title p {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .flatCard .title p span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .flatCard .price span {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .flatCard .cardFoot>a.button:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body .unitsTableSection .unitsTable .tHead .unitTableSort i {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .unitsTableSection .unitsTable .tHead .unitTableSort[data-sort-direction] i {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body .layoutSide .filterOpen {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .filterModal .filterModal__reset:hover, :where(html.rf-on) .filterModal .filterModal__reset:focus-visible {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body .layoutMain .resultBar .resultBar__count {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .layoutMain .resultBar .shareToggle {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .layoutMain .resultBar .viewToggle .viewToggle__option {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body .layoutMain .resultBar .viewToggle .viewToggle__option.active {
+    color: var(--rf-on-green)
+}
+:where(html.rf-on) .floorPreview .floorPreview__label {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.brokerOffer .form .submitPack input[type="submit"] {
+    color: var(--rf-green-ink) !important
+}
+:where(html.rf-on) body.frontend-reounit section.brokerOffer .form .submitPack:hover input[type="submit"] {
+    color: var(--rf-on-green) !important
+}
+:where(html.rf-on) body.frontend-reounit section.brokerOffer .colleagueBox .about .perex {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.brokerOffer .colleagueBox .about a.next-link {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-reounit section.brokerOffer .colleagueBox .about a.next-link:hover {
+    color: var(--rf-green-ink)
+}
+:where(html.rf-on) body.frontend-reounit section.unitDetail .container .content .uk-grid>div .unitRooms__table thead th {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.unitDetail .container .content .uk-grid>div .unitRooms__code {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.unitDetail .container .content .uk-grid>div .unitRooms__extra th, :where(html.rf-on) body.frontend-reounit section.unitDetail .container .content .uk-grid>div .unitRooms__extra td {
+    color: var(--rf-muted)
+}
+:where(html.rf-on) body.frontend-reounit section.unitDetail .container .content .uk-grid>div .unitRooms__note {
+    color: var(--rf-muted)
+}
+
+/* ---- 90-footer.css ---- */
+/* =====================================================================
+   90 · Patička
+   Struktura a barvy beze změny. Oprava os a drobné typografie:
+   první sloupec byl odsazený 64px (logo mimo hranu obsahu),
+   na mobilu zase o 15px před hranou (záporný okraj UIkit gridu).
+   ===================================================================== */
+
+section.footerMain {
+	padding: clamp(48px, 5vw, 88px) 0 clamp(40px, 4vw, 64px);
+}
+
+section.footerMain .container > .uk-grid > div:first-child {
+	padding-left: 15px;
+}
+
+@media only screen and (max-width: 1199px) {
+	section.footerMain .container > .uk-grid > div:first-child {
+		padding-left: 15px;
+	}
+}
+
+@media only screen and (max-width: 959px) {
+	section.footerMain .container > .uk-grid > div:first-child {
+		padding-left: 15px;
+	}
+}
+
+section.footerMain .logo {
+	max-width: 19rem;
+}
+
+/* Nadpisy sloupců: drobné verzálky s prostrkáním jako jinde na webu */
+section.footerMain h3 {
+	font-size: max(1.2rem, 11px);
+	letter-spacing: 0.12em;
+	color: rgb(255 255 255 / 0.92);
+	margin-bottom: 2rem;
+}
+
+section.footerMain .footerNav ul a,
+section.footerMain .footerTools ul a,
+section.footerMain .footerContact .contactLink {
+	font-size: max(1.5rem, 14px);
+	transition: color var(--rf-dur) var(--rf-ease);
+}
+
+section.footerMain .footerNav ul a:hover,
+section.footerMain .footerTools ul a:hover {
+	color: #fff;
+}
+
+section.footerMain .address {
+	font-size: max(1.5rem, 14px);
+}
+
+section.footerMain .officeAddress__label {
+	font-size: max(1.2rem, 11px);
+}
+
+section.footerMain .socialPack a {
+	width: 4.4rem;
+	height: 4.4rem;
+	min-width: 40px;
+	min-height: 40px;
+}
+
+section.footerMain .footerContact .footerCta {
+	min-height: 4.4rem;
+	letter-spacing: 0.06em;
+}
+
+/* Spodní lišta: jemná dělicí linka místo druhého odstínu jako jediného předělu */
+section.footerEnd {
+	padding: 1.8rem 0;
+	border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+section.footerEnd .container .uk-grid > div .menu li a,
+section.footerEnd .container .uk-grid > div .copy {
+	font-size: max(1.2rem, 11.5px);
+}
+
+@media only screen and (max-width: 959px) {
+	section.footerMain .container > .uk-grid > div {
+		margin-bottom: 1.6rem;
+	}
+}
+
+/* ---- 95-mobile.css ---- */
+/* =====================================================================
+   95 · Mobil a tablet — průřezové úpravy
+   ===================================================================== */
+
+/* overflow-x:hidden na html i body dělal z body scroll kontejner →
+   position:sticky uvnitř nefungoval. clip ořezává stejně, ale scroll
+   kontejner nevytváří. Starší prohlížeče zůstanou na hidden. */
+@supports (overflow: clip) {
+	html,
+	body {
+		overflow-x: clip;
+	}
+}
+
+/* --- Hlavička na mobilu --------------------------------------------------- */
+@media only screen and (max-width: 1199px) {
+	header section.topBar .uk-navbar-toggle {
+		flex: 0 0 44px;
+		color: var(--rf-ink-2);
+	}
+
+	/* Hamburger → křížek při otevřeném menu */
+	header section.topBar .uk-navbar-toggle svg .line {
+		transition: transform var(--rf-dur) var(--rf-ease), opacity var(--rf-dur);
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+
+	header section.topBar .uk-navbar-toggle[aria-expanded="true"] .line.top {
+		transform: translateY(18px) rotate(45deg);
+	}
+
+	header section.topBar .uk-navbar-toggle[aria-expanded="true"] .line.middle {
+		opacity: 0;
+	}
+
+	header section.topBar .uk-navbar-toggle[aria-expanded="true"] .line.bottom {
+		transform: translateY(-18px) rotate(-45deg);
+	}
+
+	/* Offcanvas pod hlavičkou: logo, CTA i hamburger zůstanou na místě
+	   (dřív bar překryl i hlavičku, křížek 24px v rohu, logo poskočilo) */
+	html.uk-offcanvas-page header,
+	html.uk-offcanvas-page header section.topBar {
+		z-index: 1010;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar {
+		top: var(--rf-header-h);
+		padding: 2rem var(--rf-gutter) 3.2rem;
+		box-shadow: inset 0 1px 0 #d9ece3;
+	}
+
+	#offcanvas-nav .uk-offcanvas-close,
+	#offcanvas-nav .uk-offcanvas-bar > .logo {
+		display: none;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top {
+		justify-content: flex-start;
+		gap: 4px;
+		margin: 0 -10px;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .menuLink {
+		min-width: 44px;
+		min-height: 44px;
+		justify-content: center;
+		margin: 0;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .menuLink > .icon {
+		margin-right: 0;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .languageSwitcher {
+		margin-left: auto;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .top .languageSwitcher .language li a {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 36px;
+		min-height: 44px;
+		font-size: 14px;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .uk-nav {
+		margin-top: 1.2rem;
+	}
+
+	#offcanvas-nav .uk-offcanvas-bar .offcanvasMainNav > li > a {
+		font-size: 15px;
+		line-height: 22px;
+		padding: 13px 0;
+		letter-spacing: 0.04em;
+	}
+}
+
+/* --- Patička na mobilu: jedna hrana, dotykové řádky ------------------------ */
+@media only screen and (max-width: 959px) {
+	section.footerMain .footerNav ul li,
+	section.footerMain .footerTools ul li {
+		margin-bottom: 0;
+	}
+
+	section.footerMain .footerNav ul a,
+	section.footerMain .footerTools ul a {
+		display: block;
+		padding: 8px 0;
+		line-height: 24px;
+	}
+
+	section.footerMain .footerContact .contactLink {
+		min-height: 44px;
+		margin-bottom: 0;
+	}
+
+	section.footerEnd .container > .uk-grid > div {
+		padding-left: 15px;
+	}
+
+	section.footerEnd .container .uk-grid > div .menu li a {
+		display: inline-block;
+		padding: 12px 0;
+	}
+
+	section.footerEnd .container .uk-grid > div .menu li a,
+	section.footerEnd .container .uk-grid > div .copy {
+		color: rgb(255 255 255 / 0.7);
+	}
+}
+
+/* --- Boční odsazení: lokální přídavky se sčítaly s okrajem stránky -------- */
+@media only screen and (max-width: 959px) {
+	section.contentPage .container .uk-grid > div .text,
+	section.videoContent .container .uk-grid > div .text {
+		max-width: none;
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	section.vizualize .container .top h2,
+	section.vizualize .container .top .subtitle {
+		text-align: left;
+	}
+}
+
+/* --- Dotykové cíle (vzhled stejný, větší klikací plocha) ------------------- */
+@media (pointer: coarse) {
+	ul.uk-slider-nav.uk-dotnav {
+		margin-left: 0;
+		gap: 0;
+	}
+
+	ul.uk-slider-nav.uk-dotnav > * {
+		padding-left: 0;
+	}
+
+	ul.uk-slider-nav.uk-dotnav > * > * {
+		box-sizing: content-box;
+		border: 12px solid transparent;
+		background-clip: padding-box;
+	}
+
+	.flatCard form.ajax :is(button.favourite, button.comparator),
+	section.brokerProperties form.ajax button.productBox-component {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+	}
+
+	section.brokerProperties .uk-slider a:is(.uk-position-center-left, .uk-position-center-right) {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+	}
+
+	section.panoramaHero .panoramaHero__quickSearchItem span {
+		font-size: 12px;
+	}
+
+	section.panoramaHero .panoramaHero__quickSearchTrigger {
+		font-size: 14px;
+	}
+
+	section.panoramaHero .panoramaHero__quickSearchOption {
+		min-height: 44px;
+		font-size: 14px;
+	}
+}
+
+/* Rychlé vyhledávání: klikatelný byl jen 20px řádek hodnoty, ne celé pole */
+section.panoramaHero .panoramaHero__quickSearchTrigger::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+}
+
+/* --- Drobné písmo na mobilu (prvky v px, které škála rootu nezasáhne) ------ */
+@media only screen and (max-width: 639px) {
+	section.pageTopPanel .buyPanel__addonNote,
+	section.pageTopPanel .buyPanel__monthly .note,
+	section.unitDetail .unitRooms__note {
+		font-size: 13px;
+	}
+
+	section.brokerOffer fieldset label,
+	section.brokerOffer .dayCol > p,
+	section.brokerOffer .dayPartCol > p {
+		font-size: 14px;
+	}
+
+	.flatCard .top label {
+		font-size: 11.5px;
+		font-weight: 600;
+	}
+
+	section.newsExtract .newsExtractCard__meta {
+		font-size: 12px;
+	}
+
+	body section.benefits .container .content .uk-grid > div .benefitsBox p {
+		font-size: 14px;
+	}
+}

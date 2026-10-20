@@ -1,0 +1,295 @@
+/* =====================================================================
+   75 · Detail bytu, makléř, makléři
+   ===================================================================== */
+
+/* --- Hero detailu bytu: text na hraně obsahu, cena jako hlavní číslo ----- */
+body.frontend-reounit section.pageTopPanel {
+	padding-top: clamp(24px, 3vw, 40px);
+}
+
+body.frontend-reounit section.pageTopPanel .container .uk-grid > div:first-of-type > :is(.text, .backLink) {
+	left: 0;
+}
+
+body.frontend-reounit section.pageTopPanel .container .uk-grid > div:first-of-type > .backLink {
+	padding-left: 0;
+	margin-bottom: 16px;
+	min-width: 0;
+}
+
+@media only screen and (min-width: 960px) {
+	body.frontend-reounit section.pageTopPanel .container .uk-grid > div:first-of-type {
+		justify-content: flex-start;
+	}
+}
+
+body.frontend-reounit section.pageTopPanel .text .atr {
+	font-size: max(1.6rem, 14px);
+	font-weight: 500;
+}
+
+body.frontend-reounit section.pageTopPanel .text .atr--features {
+	font-size: max(1.4rem, 13px);
+	color: var(--rf-muted);
+}
+
+/* 3 náhledy v mřížce na 4 sloupce → prázdný slot; sloupce podle počtu */
+body.frontend-reounit .pageTopPanel .heroGallery .thumbs:has(> a:nth-child(3):last-child) {
+	grid-template-columns: repeat(3, 1fr);
+}
+
+body.frontend-reounit .pageTopPanel .heroGallery .thumbs:has(> a:nth-child(2):last-child) {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+/* --- Rozpis místností a poloha v domě ------------------------------------- */
+@media only screen and (min-width: 960px) {
+	body.frontend-reounit section.unitDetail .container .content .uk-grid > div .unitRooms {
+		position: sticky;
+		top: calc(var(--rf-nav-offset) + 24px);
+		transition: top var(--rf-dur-slow) var(--rf-ease-out);
+	}
+}
+
+body.frontend-reounit section.unitDetail .container .content .uk-grid > div .unitRooms__table thead th:last-child {
+	text-align: right;
+}
+
+/* Chyba v bundlu (špatně vnořený selektor): polygon „Poloha v domě“ byl
+   zelený i u rezervovaných a prodaných bytů. Barvy stavů jsou šablony. */
+.frontend-reounit .planBox .floorPosition.is-reserved .floorPosition__polygon polygon {
+	fill: rgb(199 126 27 / 0.4);
+	stroke: #c77e1b;
+}
+
+.frontend-reounit .planBox .floorPosition.is-sold .floorPosition__polygon polygon {
+	fill: rgb(205 19 10 / 0.4);
+	stroke: #cd130a;
+}
+
+/* --- Formulář u makléře (zelená sekce) ------------------------------------ */
+/* Hover tlačítka splýval se zeleným pozadím, zelený fokus na zelené nebyl vidět */
+body.frontend-reounit section.brokerOffer .form .submitPack:hover input[type="submit"] {
+	background: #fff !important;
+	border-color: #fff !important;
+	color: var(--rf-green-dark) !important;
+}
+
+body.frontend-reounit section.brokerOffer .form .submitPack:hover picture.icon svg path {
+	stroke: var(--rf-green-dark) !important;
+}
+
+section.brokerOffer .form fieldset :is(input, textarea):focus {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
+section.brokerOffer .form fieldset :is(input, textarea).uk-form-danger {
+	border-color: #cd130a !important;
+}
+
+/* Chyba validace se kreslila přes zadávaný text → pod pole na bílý štítek */
+section.brokerOffer .form fieldset .error {
+	position: static;
+	display: flex;
+	gap: 4px;
+	width: fit-content;
+	margin-top: 6px;
+	padding: 2px 8px;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 12px;
+	color: #cd130a;
+}
+
+body.frontend-reounit section.brokerOffer .form .uk-grid > div > p {
+	max-width: 34ch;
+}
+
+@media only screen and (min-width: 960px) {
+	body.frontend-reounit section.brokerOffer .colleagueBox {
+		position: sticky;
+		top: calc(var(--rf-nav-offset) + 24px);
+	}
+}
+
+/* iOS zoomuje stránku při fokusu pole s písmem pod 16px */
+@media only screen and (max-width: 959px) {
+	:is(section.brokerOffer, section.contactSection, section.calculator, section.investmentCalculator, section.form) :is(input[type="text"], input[type="email"], input[type="tel"], input[type="number"], textarea, select) {
+		font-size: 16px !important;
+	}
+}
+
+/* --- Kalkulačky na detailu: stejné rámování obou karet -------------------- */
+section.purchaseSteps > .container {
+	max-width: none;
+}
+
+/* --- Podobné byty (slider): tichá hrana karty, větší mezera ---------------- */
+section.unitSlider .flatCard {
+	border: 1px solid #ededed;
+	overflow: hidden;
+	transition: border-color var(--rf-dur) var(--rf-ease);
+}
+
+section.unitSlider .flatCard:hover {
+	border-color: #dcdcdc;
+}
+
+section.unitSlider .flatCard .title p {
+	font-size: max(1.4rem, 13px);
+}
+
+/* --- Makléř: hlavička profilu ---------------------------------------------- */
+/* Prázdný tmavý pruh 218px bez obsahu odsouval profil dolů */
+section.pageTop.makler > .bg {
+	display: none;
+}
+
+section.pageTop.makler {
+	padding-top: clamp(32px, 4vw, 64px);
+}
+
+section.pageTop.makler .portrait {
+	overflow: hidden;
+	border-radius: var(--rf-radius-lg);
+}
+
+section.pageTop.makler .portrait img {
+	object-fit: cover;
+	object-position: top;
+}
+
+section.pageTop.makler .button-wrapper .ico2 svg {
+	transform: rotate(90deg);
+}
+
+section.pageTop.makler .contactBanner {
+	border-radius: var(--rf-radius-lg);
+}
+
+/* --- Karty makléřů (výpis + „kontaktovat někoho konkrétního“) ------------- */
+:is(section.entityContact, section.maklerList) .entityBox .picture {
+	aspect-ratio: 4 / 5;
+	overflow: hidden;
+	border-radius: var(--rf-radius-lg);
+	background: var(--rf-surface-2);
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .picture img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: top;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .bottom {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .next-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .next-link .ico svg {
+	width: 16px;
+	height: 16px;
+}
+
+:is(section.entityContact, section.maklerList) .entityBox .button-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+section.maklerList .uk-slider-items:has(> li:only-child) {
+	justify-content: center;
+}
+
+/* --- Nemovitosti makléře (.productBox): sjednotit s kartou bytu ----------- */
+section.brokerProperties .uk-grid > div > .productBox {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid #ededed;
+	border-radius: var(--rf-radius-lg);
+	overflow: hidden;
+	margin-bottom: 0;
+	transition: border-color var(--rf-dur) var(--rf-ease), box-shadow var(--rf-dur) var(--rf-ease);
+}
+
+section.brokerProperties .uk-grid > div > .productBox:hover {
+	border-color: #dcdcdc;
+	box-shadow: var(--rf-shadow-md);
+}
+
+section.brokerProperties .uk-grid {
+	row-gap: 24px;
+}
+
+/* --- Formulář na stránce makléře neměl v bundlu žádné styly ---------------- */
+section.contactSection.formSection {
+	padding: var(--rf-section-y) 0;
+}
+
+section.contactSection.formSection .form fieldset {
+	position: relative;
+	margin: 0;
+}
+
+section.contactSection.formSection .form fieldset :is(input[type="text"], input[type="email"], input[type="tel"], textarea) {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 48px;
+	padding: 1.2rem 1.6rem;
+	border: 1px solid #e3e3e3;
+	border-radius: var(--rf-radius);
+	background: #fff;
+	font: 400 max(1.6rem, 15px) / 1.4 "Poppins", sans-serif;
+	color: var(--rf-ink-2);
+	appearance: none;
+	transition: border-color var(--rf-dur), box-shadow var(--rf-dur);
+}
+
+section.contactSection.formSection .form fieldset textarea {
+	min-height: 12rem;
+	resize: vertical;
+}
+
+section.contactSection.formSection .form fieldset :is(input, textarea):focus {
+	border-color: var(--rf-green);
+	box-shadow: 0 0 0 3px rgb(66 199 135 / 0.22);
+	outline: 0;
+}
+
+/* Šipky slideru „vně“ (42px + 15px okraj) se do širšího shellu nevešly
+   a přetékaly okno o 9–13px → ve žlábku bez okraje, na užších šířkách
+   uvnitř přes kraj karet */
+section.unitSlider .uk-slidenav.uk-position-small {
+	margin: 0;
+}
+
+@media only screen and (max-width: 1279px) {
+	section.unitSlider .uk-position-center-left-out {
+		right: auto;
+		left: 8px;
+	}
+
+	section.unitSlider .uk-position-center-right-out {
+		left: auto;
+		right: 8px;
+	}
+
+	section.unitSlider .uk-slidenav {
+		background: rgb(255 255 255 / 0.92);
+		border-radius: 50%;
+		box-shadow: var(--rf-shadow-sm);
+		z-index: 3;
+	}
+}
