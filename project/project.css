@@ -185,3 +185,17 @@ html.rf-on .rfPois__col h3 { text-transform: none !important; letter-spacing: 0 
 section.topBar .container .uk-grid > div a.logo { height: auto !important; max-height: none !important; overflow: visible !important; margin-top: 0 !important; padding: 4px 0; }
 section.topBar .container .uk-grid > div a.logo .bvzLogoImg { height: 46px !important; }
 @media (max-width: 479px) { section.topBar .container .uk-grid > div a.logo .bvzLogoImg { height: 36px !important; } }
+
+/* Klientský web: přepínač verzí šablony (Původní/Upravená) se nezobrazuje */
+.refineSwitch { display: none !important; }
+
+/* Úvod: větší nadpis */
+html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copy h1 { font-size: clamp(4.4rem, 6.4vw, 10rem) !important; line-height: 1.02 !important; margin-bottom: 0.15em; }
+/* Vyhledávání: přes celou šířku, okraje vlevo/vpravo stejné jako u hlavičky (logo / menu) */
+@media (min-width: 640px) {
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__quickSearch { left: var(--rf-gutter) !important; right: var(--rf-gutter) !important; width: auto !important; max-width: none !important; transform: none !important; }
+}
+@media (min-width: 960px) {
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copyInner { width: auto !important; max-width: 60rem !important; }
+	html.rf-on section.panoramaHero.rfVideoHero .panoramaHero__copy h1 { white-space: nowrap; max-width: none !important; width: auto !important; }
+}

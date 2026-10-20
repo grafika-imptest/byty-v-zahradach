@@ -11,8 +11,8 @@
 	var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
 		set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 	var qs = location.search;
-	if (/[?&]puvodni\b/.test(qs)) store.set('brave-refine', 'off');
-	if (/[?&]upravene\b/.test(qs)) store.set('brave-refine', 'on');
+	// Klientský web: vždy upravená verze (přepínač šablony se nezobrazuje, ?puvodni nic nedělá)
+	store.set('brave-refine', 'on');
 	// „Upravená V2“ (/v3/) je v přepínači skrytá — stránka zůstává jen na přímé adrese.
 	// Zpět ji zapne SHOW_V3 = true (přesměrování homepage + tlačítko).
 	var SHOW_V3 = false;
@@ -163,6 +163,6 @@
 			else if (onV3) location.href = B + '/';
 			else location.reload();
 		});
-		document.body.appendChild(s);
+		// klientský web: přepínač verzí šablony se nevkládá
 	});
 })();
