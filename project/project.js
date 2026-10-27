@@ -111,4 +111,21 @@
 		window.addEventListener('storage', sync);
 		sync();
 	})();
+/* Legenda mapy lokality: zaškrtávátka skutečně skrývají body dané kategorie (šablona je jen kreslila) */
+	(function () {
+		var legend = document.querySelector('[data-map-legend]');
+		if (!legend) return;
+		var box = legend.closest('.mapWrapper');
+		function apply() {
+			var off = Array.prototype.filter.call(legend.querySelectorAll('input[type="checkbox"]'), function (i) { return !i.checked; }).map(function (i) { return i.value; });
+			Array.prototype.forEach.call(box.querySelectorAll('.brave-map-pin img[data-category]'), function (img) {
+				var pin = img.closest('.leaflet-marker-icon');
+				if (pin) pin.style.display = off.indexOf(img.getAttribute('data-category')) > -1 ? 'none' : '';
+			});
+		}
+		legend.addEventListener('change', apply);
+		// piny se dotahují až při zobrazení mapy
+		if ('MutationObserver' in window) new MutationObserver(apply).observe(box, { childList: true, subtree: true });
+	})();
+
 })();
