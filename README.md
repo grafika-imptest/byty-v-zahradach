@@ -53,3 +53,11 @@ fotografie hrubé stavby 8–9/2026, katalog 10/2025. Místa v okolí: OpenStree
 - Logo a brand projektu nejsou součástí zakázky — v návrhu je jen textové označení „Byty v zahradách“.
 - Úvod: video 13,7 s z Magnificu (Kling 2.5) — 2 záběry z upravených JPEGů 3 a 4, interiér 2+kk podle textového popisu (ilustrační, ne podle konkrétního bytu); `project/media/`, při výměně zvýšit `MEDIA_V` v tools/project.mjs.
 - Výběr pater (interaktivní dům): rozšířený JPEG vizualizace 5 (výřez v project/make-viz.mjs), silueta a pásy podlaží v tools/project.mjs (FLOOR_LINES, HOUSE_OUTLINE).
+
+## Připomínky klienta 27. 10. 2026 (zapracováno)
+
+Kolaudace Q2 2027 na úvodu · Sportovní centrum Řepy s plaveckou halou vyzdviženo (úvod, Lokalita) ·
+standardy: venkovní žaluzie (přínos pro klimatizaci) a samostatná plynová kotelna · klientské změny jen
+„omezený výběr podlahových krytin“ bez termínu · fotky stavby jen v Aktualitách (úvod = karty bez fotek,
+O projektu/Standardy = vizualizace) · názvy bytů jen číslem (Byt 107) · nová stránka Financování
+(orientační kalkulačka hypotéky, postup koupě, platební podmínky individuálně) · hover tlačítek čitelný.

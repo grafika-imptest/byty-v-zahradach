@@ -18,7 +18,9 @@ export const project = {
 	mix: { '1+kk': 11, '2+kk': 18, '3+kk': 5 },
 	// Fillout: „22 v zakladačích, 2 parkoviště“; výkres 1.PP ukazuje stání 1–23 (k potvrzení)
 	parking: { garage: 22, outdoor: 2, note: 'Parkování není součástí ceny bytu.' },
-	clientChanges: 'výběr podlah, obkladů, dlažeb a zařizovacích předmětů',
+	// klient 27. 10. 2026: jen omezený výběr podlahových krytin, přesné možnosti a termín zatím neuvádět
+	clientChanges: 'omezený výběr podlahových krytin',
+	completion: 'Plánovaná kolaudace – 2. kvartál 2027',
 	developer: {
 		name: 'HICH Holding s.r.o.',
 		ico: '07396708',
@@ -95,7 +97,8 @@ export const units = ROWS.trim().split('\n').map(line => {
 	const floor = Number(no[0]);
 	const pos = no.slice(1);
 	return {
-		no, code: `${floor}.${pos}`, slug: `byt-${no}`, floor, dispo,
+		// klient 27. 10.: v názvech jednotek jen číslo (101), ne 1.01 / A101
+		no, code: no, slug: `byt-${no}`, floor, dispo,
 		area: num(area), balcony: num(balcony), terrace: num(terrace), garden: num(garden),
 		// Ceny klient doplní v administraci (Fillout) — návrh ukazuje „Cena na vyžádání“
 		price: null,
@@ -117,11 +120,13 @@ export const floors = [1, 2, 3, 4].map(n => ({
 export const standards = [
 	{ icon: 'mdi-door', title: 'Vstupní dveře', text: 'Bezpečnostní dveře třídy RC 2 s protipožární odolností EW 30 DP3, bezpečnostní kování, ocelová zárubeň, výška 2 100 mm.' },
 	{ icon: 'mdi-door-open', title: 'Vnitřní dveře', text: 'Hladké plné dveře SAPELI s obložkovou zárubní, výška 2 100 mm.' },
-	{ icon: 'mdi-window-closed-variant', title: 'Okna a balkonové dveře', text: 'Plastová okna VEKRA s trojsklem, zvenku antracit, uvnitř bílá. Předokenní žaluzie Zetta 90 v barvě RAL 7016.' },
+	{ icon: 'mdi-window-closed-variant', title: 'Okna a balkonové dveře', text: 'Plastová okna VEKRA s trojsklem, zvenku antracit, uvnitř bílá.' },
+	{ icon: 'mdi-blinds-horizontal', title: 'Venkovní žaluzie', text: 'Předokenní žaluzie Zetta 90 v barvě RAL 7016. Stíní ještě před sklem, takže se byt v létě méně přehřívá a klimatizace pracuje úsporněji.' },
 	{ icon: 'mdi-floor-plan', title: 'Podlahy', text: 'Vinylová plovoucí podlaha v pokojích, dlažba v předsíni, koupelně a na toaletě.' },
 	{ icon: 'mdi-shower-head', title: 'Koupelna a WC', text: 'Keramický obklad do stropu, sprchová vanička z litého mramoru se skleněnou zástěnou, závěsné WC, umyvadlo 60 cm, chromové pákové baterie, otopný žebřík.' },
 	{ icon: 'mdi-snowflake', title: 'Klimatizace', text: 'Vnitřní jednotka klimatizace v každé obytné místnosti (mimo koupelny).' },
-	{ icon: 'mdi-radiator', title: 'Vytápění', text: 'Otopná tělesa RADIK VK s termostatickými hlavicemi, zdrojem je plynová kotelna domu.' },
+	{ icon: 'mdi-radiator', title: 'Vytápění', text: 'Otopná tělesa RADIK VK s termostatickými hlavicemi v každém bytě.' },
+	{ icon: 'mdi-fire', title: 'Plynová kotelna domu', text: 'Dům má vlastní samostatnou plynovou kotelnu, ze které se vytápí všechny byty.' },
 	{ icon: 'mdi-solar-power-variant', title: 'Fotovoltaika', text: 'Společná fotovoltaická elektrárna na střeše slouží k ohřevu teplé vody pro celý dům.' },
 	{ icon: 'mdi-pot-steam-outline', title: 'Kuchyně', text: 'Připravenost pro kuchyňskou linku: voda, kanalizace, elektro a samostatný odtah digestoře nad střechu. Linka není součástí dodávky.' },
 	{ icon: 'mdi-flash-outline', title: 'Elektro a data', text: 'Bytový rozvaděč, zásuvky a vypínače ABB, příprava pro svítidla, datová přípojka do obývacího pokoje.' },
@@ -169,7 +174,7 @@ export const pois = [
 	{ cat: 'Školy', icon: 'mdi-teddy-bear', name: 'Mateřská škola Pastelka', lat: 50.06717, lng: 14.30354 },
 	{ cat: 'Školy', icon: 'mdi-school-outline', name: 'ZŠ gen. Františka Peřiny', lat: 50.06331, lng: 14.30634 },
 	{ cat: 'Školy', icon: 'mdi-school-outline', name: 'ZŠ Jana Wericha', lat: 50.06905, lng: 14.30679 },
-	{ cat: 'Volný čas', icon: 'mdi-basketball', name: 'Sportovní centrum Řepy', lat: 50.067, lng: 14.29635 },
+	{ cat: 'Volný čas', icon: 'mdi-swim', name: 'Sportovní centrum Řepy (plavecká hala)', lat: 50.067, lng: 14.29635, highlight: true },
 	{ cat: 'Volný čas', icon: 'mdi-tree-outline', name: 'Park Na Prameništi', lat: 50.06121, lng: 14.28546 },
 	{ cat: 'Volný čas', icon: 'mdi-dumbbell', name: 'DrFit', lat: 50.06523, lng: 14.30842, addr: 'Nevanova 1063/46' },
 	{ cat: 'Restaurace', icon: 'mdi-silverware-fork-knife', name: 'Restaurace Sokol', lat: 50.068, lng: 14.29528 },

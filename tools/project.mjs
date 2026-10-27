@@ -110,12 +110,13 @@ const stepsSection = () => `<section class="purchaseSteps"><div class="container
 
 const pageTop = ({ subtitle, h1, text, img, alt, back }) => `<section class="pageTopPanel pageTopPanel--singleMediaSmall"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-width-2-5@m">${back ? `<p class="backLink"><a href="${back[0]}"><img src="${u('/www/Development/images/svg/chevron-down.svg')}" alt="" class="chevronBack" data-uk-svg><span>${back[1]}</span></a></p>` : ''}<div class="text">${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}<h1>${h1}</h1><div class="editableBlock">${text}</div></div></div><div class="uk-width-3-5@m" data-image-brick><picture><img loading="lazy" src="${img}" alt="${esc(alt)}"></picture></div></div></div></section>`;
 
-const newsCard = (n, cls = 'newsExtractCard') => `<a href="${u(`/aktuality/${n.slug}/`)}" class="${cls}"><picture><img loading="lazy" src="${foto(n.photo, 800)}" alt="${esc(n.title)}"></picture><h3>${esc(n.title)}</h3><p class="${cls === 'pageConBox' ? 'pageConBox__distance' : 'newsExtractCard__meta'}"><i class="mdi mdi-calendar-blank-outline" aria-hidden="true"></i> ${dateCz(n.date)} <span aria-hidden="true">·</span> <i class="mdi mdi-tag-outline" aria-hidden="true"></i> Výstavba</p><p>${esc(n.perex)}</p></a>`;
+// fotky ze stavby jen v Aktualitách (klient 27. 10.) — na úvodu karty bez fotky
+const newsCard = (n, cls = 'newsExtractCard', img = true) => `<a href="${u(`/aktuality/${n.slug}/`)}" class="${cls}${img ? '' : ' rfNewsNoImg'}">${img ? `<picture><img loading="lazy" src="${foto(n.photo, 800)}" alt="${esc(n.title)}"></picture>` : ''}<h3>${esc(n.title)}</h3><p class="${cls === 'pageConBox' ? 'pageConBox__distance' : 'newsExtractCard__meta'}"><i class="mdi mdi-calendar-blank-outline" aria-hidden="true"></i> ${dateCz(n.date)} <span aria-hidden="true">·</span> <i class="mdi mdi-tag-outline" aria-hidden="true"></i> Výstavba</p><p>${esc(n.perex)}</p></a>`;
 
 // ---------------------------------------------------------------------------- //
 // Společné části stránek
 // ---------------------------------------------------------------------------- //
-const NAV = [['/o-projektu/', 'O projektu'], ['/standardy/', 'Standardy'], ['/lokalita/', 'Lokalita'], ['/aktuality/', 'Aktuality'], ['/kontakty/', 'Kontakt']];
+const NAV = [['/o-projektu/', 'O projektu'], ['/standardy/', 'Standardy'], ['/lokalita/', 'Lokalita'], ['/financovani/', 'Financování'], ['/aktuality/', 'Aktuality'], ['/kontakty/', 'Kontakt']];
 const DESC = `${P.name} – nový bytový dům v ulici ${P.street}, ${P.place}. ${P.units} bytů 1+kk až 3+kk s balkonem, terasou nebo zahradou, klimatizace a garáž v domě.`;
 
 function chrome(root, { title, desc = DESC, current }) {
@@ -195,19 +196,19 @@ function home(root) {
 	const hero = `<section class="panoramaHero rfVideoHero rfSlideHero" aria-label="Úvod">
 ${HERO_VIDEO ? `<video class="rfVideoHero__video" muted playsinline loop autoplay preload="auto" poster="${u('/project/media/hero-poster.jpg')}?v=${MEDIA_V}" aria-hidden="true"><source src="${u('/project/media/hero-1080.mp4')}?v=${MEDIA_V}" type="video/mp4" media="(max-width: 959px)"><source src="${u('/project/media/hero-1920.mp4')}?v=${MEDIA_V}" type="video/mp4"></video>` : `<div class="rfSlides" data-rf-slides>${slides}</div>`}<div class="panoramaHero__shade rfVideoHero__shade"></div>
 ${searchForm()}
-<div class="panoramaHero__copy container"><div class="panoramaHero__copyInner"><p class="subtitle">${esc(P.place)} · ${P.units} bytů · 1+kk až 3+kk</p><h1>${esc(P.name)}</h1><div class="panoramaHero__lead">Nový bytový dům v ulici ${esc(P.street)}. Každý byt s balkonem, terasou nebo zahradou, klimatizace v pokojích a garáž přímo v domě.</div><p class="panoramaHero__cta"><a href="${u('/nabidka-nemovitosti/')}" class="button">Vybrat byt<i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></p></div></div>
+<div class="panoramaHero__copy container"><div class="panoramaHero__copyInner"><p class="subtitle">${esc(P.place)} · ${P.units} bytů · 1+kk až 3+kk</p><h1>${esc(P.name)}</h1><p class="rfCompletion"><i class="mdi mdi-calendar-check-outline" aria-hidden="true"></i>${esc(P.completion)}</p><div class="panoramaHero__lead">Nový bytový dům v ulici ${esc(P.street)}. Každý byt s balkonem, terasou nebo zahradou, klimatizace v pokojích a garáž přímo v domě.</div><p class="panoramaHero__cta"><a href="${u('/nabidka-nemovitosti/')}" class="button">Vybrat byt<i class="mdi mdi-chevron-right" aria-hidden="true"></i></a></p></div></div>
 ${HERO_VIDEO ? '' : `<div class="rfSlideDots" role="tablist" aria-label="Vizualizace">${D.gallery.viz.slice(0, 4).map((i, k) => `<button type="button" class="${k === 0 ? 'is-active' : ''}" aria-label="${VIZ_ALT[i]}"></button>`).join('')}</div>`}
 </section>`;
 
 	const near = ['Doprava', 'Obchody', 'Školy', 'Zdraví', 'Volný čas'].map(c => POIS.find(p => p.cat === c));
 	const loc = `<section class="homepageInteractive"><div class="container"><div class="uk-grid-collapse" data-uk-grid><div class="uk-width-1-2@m"><div class="content"><div class="text">
 <p class="subtitle">Lokalita</p><h2>Klidná část Řep <span>a vše potřebné blízko</span></h2>
-<div class="editableBlock"><p>Dům stojí v ulici ${esc(P.street)} v pražských Řepách. Tramvaj, obchody, školy i sportoviště máte v docházkové vzdálenosti.</p>
+<div class="editableBlock"><p>Dům stojí v ulici ${esc(P.street)} v pražských Řepách. Sportovní centrum Řepy s plaveckou halou máte ${distTxt(SPORT.d)} od domu, tramvaj, obchody a školy máte v docházkové vzdálenosti.</p>
 <ul>${near.map(p => `<li class="rfLocItem"><i class="mdi ${p.icon} rfLocIcon" aria-hidden="true"></i>${esc(p.name)} · ${distTxt(p.d)}</li>`).join('')}</ul></div>
 <p class="moreLink"><a href="${u('/lokalita/')}" class="button second">Více o lokalitě<i class="mdi mdi-chevron-right"></i></a></p>
 </div></div></div><div class="uk-width-1-2@m"><div class="picture mapWrapper">${mapDiv('home', 'uk-width-1-1 uk-height-medium')}</div></div></div></div></section>`;
 
-	const gal = [...D.gallery.viz.map(i => [viz(i, 2400), viz(i, 800), VIZ_ALT[i]]), [foto(D.gallery.photos[0]), foto(D.gallery.photos[0], 800), 'Stavba v září 2026']];
+	const gal = [...D.gallery.viz.map(i => [viz(i, 2400), viz(i, 800), VIZ_ALT[i]])]; // fotky ze stavby jen v Aktualitách (klient 27. 10.)
 	const gallery = `<section class="homepageGallery"><div class="container"><div class="content"><div class="homepageGallery__layout uk-grid-large" data-uk-grid><div class="galleryColumn uk-width-1-1">
 <div class="galleryColumn__heading"><p class="subtitle">Vizualizace projektu</p><h2>Prohlédněte si nové bydlení</h2></div>
 <div class="galleryGrid uk-grid-collapse" data-uk-grid data-uk-lightbox="toggle: a.gallBox">${gal.map(([big, small, alt]) => `<div class="uk-width-1-3@s uk-width-1-2"><a href="${big}" class="gallBox" aria-label="${esc(alt)}" data-caption="${esc(alt)}"><picture><img loading="lazy" src="${small}" alt="${esc(alt)}"></picture></a></div>`).join('')}</div>
@@ -226,7 +227,7 @@ ${HERO_VIDEO ? '' : `<div class="rfSlideDots" role="tablist" aria-label="Vizuali
 	}).join('')}</div></div></div></section>`;
 
 	const news = `<section class="newsExtract"><div class="container"><div class="content"><div class="top"><div class="text"><p class="subtitle">Ze stavby</p><h2>Jak postupuje <span>výstavba</span></h2></div></div>
-<div class="newsExtract__grid rfNewsGrid">${D.news.map(n => `<div>${newsCard(n)}</div>`).join('')}</div>
+<div class="newsExtract__grid rfNewsGrid">${D.news.map(n => `<div>${newsCard(n, 'newsExtractCard', false)}</div>`).join('')}</div>
 <p class="newsExtract__more"><a href="${u('/aktuality/')}" class="button">Všechny aktuality<i class="mdi mdi-chevron-right"></i></a></p></div></div></section>`;
 
 	setMain(root, hero + loc + vizSection() + `<div class="homepageGalleryDispositionGrid"><div class="homepageGalleryDispositionGrid__item">${gallery}</div><div class="homepageGalleryDispositionGrid__item">${showcase}</div></div>` + news);
@@ -243,8 +244,8 @@ function oProjektu(root) {
 		text: `<p>${esc(P.name)} je nový bytový dům v ulici ${esc(P.street)} v pražských Řepách. Ve čtyřech nadzemních podlažích nabízí ${P.units} bytů od 1+kk do 3+kk o ploše ${num(a1)} až ${num(a2)} m². V suterénu je podzemní garáž s parkovacími zakladači a sklepy.</p>`,
 	}) + `<section class="contentPage contentPage--textOnlySmall"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-flex-first uk-width-1-2@m"><picture><img src="${viz(5)}" alt="${VIZ_ALT[5]}"></picture></div><div class="uk-flex-last uk-width-1-2@m fx fxa"><div class="text"><p class="subtitle">Bydlení v zeleni</p><h2>Každý byt má kousek venku</h2>
 <div class="editableBlock"><p>Ke každému bytu patří balkon nebo terasa. ${gardens.length} byty v přízemí mají vlastní zahradu o velikosti ${num(g1)} až ${num(g2)} m² a v nejvyšším podlaží jsou ${terr4.length === 5 ? 'pět bytů' : terr4.length + ' byty'} s terasou až ${num(Math.max(...terr4.map(x => x.terrace)))} m². Terasy v přízemí a v nejvyšším podlaží mají venkovní zásuvku, vývod pro světlo i vodu.</p></div></div></div></div></div></section>
-<section class="contentPage"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-flex-last uk-width-1-2@m"><div class="picture"><div class="uk-grid-collapse" data-uk-grid><div class="uk-width-1-2@s"><picture><img src="${viz(4, 800)}" alt="${VIZ_ALT[4]}"></picture><picture><img src="${foto('20260811_162734', 800)}" alt="Stavba v srpnu 2026"></picture></div><div class="uk-width-1-2@s"><picture><img src="${viz(2, 800)}" alt="${VIZ_ALT[2]}"></picture></div></div></div></div>
-<div class="uk-flex-first uk-width-1-2@m fx fxa"><div class="text"><p class="subtitle">Standard bydlení</p><h2>Klimatizace v každém pokoji</h2><div class="editableBlock"><p>Okna s trojsklem a venkovními žaluziemi, vinylové podlahy, klimatizace ve všech obytných místnostech a příprava pro kuchyňskou linku. Klienti si mohou vybrat ${esc(P.clientChanges)}.</p><p><a class="button" href="${u('/standardy/')}">Standardy bytů <span class="mdi mdi-chevron-right"></span></a></p></div></div></div></div></div></section>`
+<section class="contentPage"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-flex-last uk-width-1-2@m"><div class="picture"><div class="uk-grid-collapse" data-uk-grid><div class="uk-width-1-2@s"><picture><img src="${viz(4, 800)}" alt="${VIZ_ALT[4]}"></picture><picture><img src="${viz(3, 800)}" alt="${VIZ_ALT[3]}"></picture></div><div class="uk-width-1-2@s"><picture><img src="${viz(2, 800)}" alt="${VIZ_ALT[2]}"></picture></div></div></div></div>
+<div class="uk-flex-first uk-width-1-2@m fx fxa"><div class="text"><p class="subtitle">Standard bydlení</p><h2>Klimatizace v každém pokoji</h2><div class="editableBlock"><p>Okna s trojsklem, venkovní žaluzie, které v létě pomáhají klimatizaci, vinylové podlahy a příprava pro kuchyňskou linku. Dům vytápí vlastní plynová kotelna. Podlahovou krytinu si můžete zvolit z omezeného výběru.</p><p><a class="button" href="${u('/standardy/')}">Standardy bytů <span class="mdi mdi-chevron-right"></span></a></p></div></div></div></div></div></section>`
 		+ stepsSection() + vizSection({ compact: false }) + benefitsSection();
 	setMain(root, html);
 }
@@ -253,10 +254,10 @@ function standardy(root) {
 	chrome(root, { title: `Standardy | ${P.name}`, current: '/standardy/' });
 	const html = pageTop({
 		subtitle: 'Standard 10/2026', h1: 'Standardy', img: viz(2), alt: VIZ_ALT[2],
-		text: `<p>Byty předáváme s klimatizací ve všech obytných místnostech, okny s trojsklem a venkovními žaluziemi. Klienti si mohou vybrat ${esc(P.clientChanges)}.</p>`,
+		text: `<p>Byty předáváme s klimatizací ve všech obytných místnostech, okny s trojsklem a venkovními žaluziemi, které stíní ještě před sklem a snižují zátěž klimatizace. Dům vytápí vlastní plynová kotelna.</p>`,
 	}) + `<section class="rfStandards"><div class="container"><div class="top"><p class="subtitle">Co je v ceně bytu</p><h2>Vybavení bytů a domu</h2></div><div class="rfStandards__grid">${D.standards.map(s => `<article class="rfStandard"><i class="mdi ${s.icon}" aria-hidden="true"></i><h3>${s.title}</h3><p>${s.text}</p></article>`).join('')}</div>
 <p class="rfNote">Prodávající si vyhrazuje právo na změnu použitých materiálů při zachování celkového standardu. Plné znění standardu 10/2026 vám rádi pošleme.</p></div></section>
-<section class="contentPage contentPage--textOnlySmall"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-flex-first uk-width-1-2@m"><picture><img src="${foto('20260811_162635')}" alt="Osazená okna, srpen 2026"></picture></div><div class="uk-flex-last uk-width-1-2@m fx fxa"><div class="text"><p class="subtitle">Klientské změny</p><h2>Byt si přizpůsobíte</h2><div class="editableBlock"><p>V průběhu výstavby si můžete vybrat ${esc(P.clientChanges)}. Termíny a postup klientských změn s vámi domluvíme individuálně.</p><p><a class="button" href="${u('/kontakty/')}">Domluvit konzultaci <span class="mdi mdi-chevron-right"></span></a></p></div></div></div></div></div></section>`
+<section class="contentPage contentPage--textOnlySmall"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-flex-first uk-width-1-2@m"><picture><img src="${viz(4)}" alt="${VIZ_ALT[4]}"></picture></div><div class="uk-flex-last uk-width-1-2@m fx fxa"><div class="text"><p class="subtitle">Klientské změny</p><h2>Výběr podlahy</h2><div class="editableBlock"><p>Podlahovou krytinu si můžete zvolit z omezeného výběru. Konkrétní možnosti vám představíme při osobní schůzce.</p><p><a class="button" href="${u('/kontakty/')}">Domluvit konzultaci <span class="mdi mdi-chevron-right"></span></a></p></div></div></div></div></div></section>`
 		+ vizSection({ compact: false }) + benefitsSection();
 	setMain(root, html);
 }
@@ -265,12 +266,14 @@ function mapDiv(id, cls = 'uk-width-1-1 uk-height-medium') {
 	return `<div data-map-id="bvz-${id}" data-map-options-endpoint="${u(`/project/map/${id}-options.json`)}" data-map-markers-endpoint="${u(`/project/map/${id}-markers.json`)}" data-map-lines-endpoint="${u('/project/map/lines.json')}" class="${cls}"></div><script> $(window).on('load', function(){ new OsmMapLoader("bvz-${id}", '', { rootMargin: '-100px', threshold: 0 }); }); </script>`;
 }
 const CATS = [...new Set(D.pois.map(p => p.cat))];
+const SPORT = POIS.find(p => p.highlight);
 function lokalita(root) {
 	chrome(root, { title: `Lokalita | ${P.name}`, current: '/lokalita/' });
 	const html = pageTop({
 		subtitle: esc(P.place), h1: 'Lokalita', img: viz(3), alt: VIZ_ALT[3],
-		text: `<p>Ulice ${esc(P.street)} leží v klidné části pražských Řep. Nejbližší tramvajová zastávka ${esc(POIS.find(p => p.cat === 'Doprava').name.replace('Tramvajová zastávka ', ''))} je vzdušnou čarou ${distTxt(POIS.find(p => p.cat === 'Doprava').d)} od domu, supermarket ${distTxt(POIS.find(p => p.cat === 'Obchody').d)}.</p>`,
-	}) + `<section class="mapContent"><div class="container"><div class="mapWrapper">${mapDiv('lokalita')}
+		text: `<p>Ulice ${esc(P.street)} leží v klidné části pražských Řep. Sportovní centrum Řepy s plaveckou halou je jen ${distTxt(SPORT.d)} od domu. Nejbližší tramvajová zastávka ${esc(POIS.find(p => p.cat === 'Doprava').name.replace('Tramvajová zastávka ', ''))} je vzdušnou čarou ${distTxt(POIS.find(p => p.cat === 'Doprava').d)} od domu, supermarket ${distTxt(POIS.find(p => p.cat === 'Obchody').d)}.</p>`,
+	}) + `<section class="rfSportHighlight"><div class="container"><div class="rfSportHighlight__box"><i class="mdi mdi-swim" aria-hidden="true"></i><div><p class="subtitle">Sport hned vedle domu</p><h2>Sportovní centrum Řepy</h2><p>Plavecká hala a další sportovní možnosti jsou jen ${distTxt(SPORT.d)} od domu. V bezprostředním okolí najdete i fitness ${esc(POIS.find(p => p.name === 'DrFit').name)} (${distTxt(POIS.find(p => p.name === 'DrFit').d)}) a park Na Prameništi (${distTxt(POIS.find(p => /Prameništi/.test(p.name)).d)}).</p></div></div></div></section>
+<section class="mapContent"><div class="container"><div class="mapWrapper">${mapDiv('lokalita')}
 <div class="legend" data-map-legend>${CATS.map((c, i) => `<p><input type="checkbox" id="check${i + 1}" name="check${i + 1}" value="${c}" checked><label for="check${i + 1}"><picture><img src="${IMG(`pins/cat-${i}.svg`)}" alt=""></picture>${c}</label></p>`).join('')}</div></div></div></section>
 <section class="rfPois"><div class="container"><div class="top"><p class="subtitle">Co je v okolí</p><h2>Vzdálenosti od domu</h2></div><div class="rfPois__grid">${CATS.map(c => `<div class="rfPois__col"><h3>${c}</h3><ul>${POIS.filter(p => p.cat === c).map(p => `<li><i class="mdi ${p.icon}" aria-hidden="true"></i><span>${esc(p.name)}${p.addr ? `<small>${esc(p.addr)}</small>` : ''}</span><b>${distTxt(p.d)}</b></li>`).join('')}</ul></div>`).join('')}</div>
 <p class="rfNote">Vzdálenosti vzdušnou čarou podle OpenStreetMap. Body v mapě doplní nebo upraví developer.</p></div></section>`
@@ -433,6 +436,26 @@ function savedPage(root, kind) {
 	setMain(root, top.outerHTML + body + UNITS_JSON() + vizSection({ compact: false }) + benefitsSection());
 }
 
+function financovani(root) {
+	chrome(root, { title: `Financování | ${P.name}`, current: '/financovani/' });
+	// kalkulačka šablony — orientační hodnoty, žádné ceny projektu (ceny jsou na vyžádání)
+	const calc = root.querySelector('section.calculator');
+	calc.querySelector('[data-calc="value"]')?.setAttribute('value', '5000000');
+	calc.querySelector('[data-calc="loan"]')?.setAttribute('value', '4000000');
+	calc.querySelector('[data-calc="own"]')?.setAttribute('value', '1000000');
+	const out = calc.querySelector('.bottom p');
+	if (out) out.set_content('Orientační měsíční splátka <span data-calc="monthly">—</span> při roční úrokové sazbě <span data-calc="rateOut">4,79 %</span>');
+	calc.querySelector('img[src*="calculate.png"]')?.closest('picture')?.remove();
+	calc.querySelector('.top .title')?.insertAdjacentHTML('beforeend', '<p class="rfNote">Úroková sazba a částky jsou pouze ilustrativní. Konkrétní nabídku hypotéky vám připraví banka.</p>');
+	const html = pageTop({
+		subtitle: 'Financování', h1: 'Financování', img: viz(3), alt: VIZ_ALT[3],
+		text: `<p>Spočítejte si orientační splátku hypotéky a podívejte se, jak probíhá nákup bytu. ${esc(P.completion)}.</p>`,
+	}) + calc.outerHTML + stepsSection()
+		+ `<section class="contentPage contentPage--textOnlySmall"><div class="container"><div class="uk-grid-small" data-uk-grid><div class="uk-flex-first uk-width-1-2@m"><picture><img src="${viz(1)}" alt="${VIZ_ALT[1]}"></picture></div><div class="uk-flex-last uk-width-1-2@m fx fxa"><div class="text"><p class="subtitle">Platební podmínky</p><h2>Domluvíme se individuálně</h2><div class="editableBlock"><p>Platební kalendář a podmínky financování vám představíme při osobní schůzce. Rádi s vámi projdeme i možnosti hypotéky.</p><p><a class="button" href="${u('/kontakty/')}">Domluvit schůzku <span class="mdi mdi-chevron-right"></span></a></p></div></div></div></div></div></section>`
+		+ vizSection({ compact: false }) + benefitsSection();
+	setMain(root, html);
+}
+
 function gdpr(root) {
 	chrome(root, { title: `Ochrana osobních údajů | ${P.name}` });
 	// Právní text dodá developer — v návrhu jen ověřené údaje správce (Fillout)
@@ -497,7 +520,7 @@ async function run() {
 		home: await read('index.html'), projekt: await read('o-projektu/index.html'), standardy: await read('standardy/index.html'),
 		lokalita: await read('lokalita/index.html'), aktuality: await read('aktuality/index.html'), clanek: await fs.readFile(path.join(OUT, 'aktuality/hruba-stavba-je-dokoncena/index.html'), 'utf8'),
 		kontakty: await read('kontakty/index.html'), byt: await fs.readFile(path.join(OUT, 'byt-a-01-01/index.html'), 'utf8'), patro: await fs.readFile(path.join(OUT, 'dum-a-1-np/index.html'), 'utf8'),
-		listing: await read('nabidka-nemovitosti/index.html'), fav: await read('oblibene-nemovitosti/index.html'), cmp: await read('porovnani-jednotek/index.html'), gdpr: await read('zpracovani-osobnich-udaju/index.html'),
+		listing: await read('nabidka-nemovitosti/index.html'), fav: await read('oblibene-nemovitosti/index.html'), fin: await read('financovani/index.html'), cmp: await read('porovnani-jednotek/index.html'), gdpr: await read('zpracovani-osobnich-udaju/index.html'),
 	};
 	const KEEP = new Set(['index.html', '404.html', '.nojekyll', 'www', 'refine', '_data', 'o-projektu', 'standardy', 'lokalita', 'kontakty', 'zpracovani-osobnich-udaju']);
 	for (const e of await fs.readdir(OUT)) if (!KEEP.has(e)) await fs.rm(path.join(OUT, e), { recursive: true, force: true });
@@ -517,6 +540,7 @@ async function run() {
 	for (const x of U) { const r = parse(T.byt, { comment: true }); unitPage(r, x); await write(`${x.slug}/index.html`, r); }
 	for (const f of D.floors) { const r = parse(T.patro, { comment: true }); floorPage(r, f); await write(`${f.n}-np/index.html`, r); }
 	gdpr(T.gdpr); await write('zpracovani-osobnich-udaju/index.html', T.gdpr);
+	financovani(T.fin); await write('financovani/index.html', T.fin);
 	savedPage(T.fav, 'fav'); await write('oblibene-nemovitosti/index.html', T.fav);
 	savedPage(T.cmp, 'cmp'); await write('porovnani-jednotek/index.html', T.cmp);
 	await assets();

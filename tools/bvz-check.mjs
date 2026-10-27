@@ -2,7 +2,7 @@
 //   node tools/bvz-check.mjs
 import { chromium } from 'playwright-core';
 const H = 'http://localhost:5330/byty-v-zahradach';
-const PAGES = ['/', '/o-projektu/', '/nabidka-nemovitosti/', '/byt-101/', '/byt-402/', '/1-np/', '/4-np/', '/standardy/', '/lokalita/', '/aktuality/', '/aktuality/okna-jsou-osazena/', '/kontakty/', '/zpracovani-osobnich-udaju/'];
+const PAGES = ['/', '/o-projektu/', '/financovani/', '/nabidka-nemovitosti/', '/byt-101/', '/byt-402/', '/1-np/', '/4-np/', '/standardy/', '/lokalita/', '/aktuality/', '/aktuality/okna-jsou-osazena/', '/kontakty/', '/zpracovani-osobnich-udaju/'];
 const b = await chromium.launch({ channel: 'msedge' });
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok  ' : 'FAIL') + ' ' + m); if (!c) fails++; };
@@ -65,7 +65,7 @@ ok(polys.length === 9 && polys.every(h => /\/byt-2\d\d\/$/.test(h)), 'půdorys 2
 
 await p.goto(H + '/byt-107/?upravene'); await p.waitForTimeout(800);
 const unit = await p.evaluate(() => ({ h1: document.querySelector('h1').textContent.trim(), price: document.querySelector('.buyPanel__price').textContent.trim(), rows: [...document.querySelectorAll('.unitRooms__table tbody:first-of-type tr')].map(r => r.textContent.replace(/\s+/g, ' ').trim()) }));
-ok(unit.h1 === 'Byt 1.07' && unit.price === 'Cena na vyžádání' && unit.rows.some(r => r.includes('Zahrada') && r.includes('155')), 'detail 1.07: zahrada 155 m², cena na vyžádání');
+ok(unit.h1 === 'Byt 107' && unit.price === 'Cena na vyžádání' && unit.rows.some(r => r.includes('Zahrada') && r.includes('155')), 'detail 107: zahrada 155 m², cena na vyžádání');
 
 await p.goto(H + '/lokalita/?upravene'); await p.waitForTimeout(800);
 await p.evaluate(() => scrollTo(0, document.querySelector('.mapContent').offsetTop)); await p.waitForTimeout(2500);
