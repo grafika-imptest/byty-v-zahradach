@@ -295,3 +295,6 @@ html.rf-on :is(a.button, .button):is(:hover, :focus-visible) svg * { stroke: #ff
 /* odkaz „Detail bytu“ na kartě je textový (bez plochy) — hover v zelené */
 html.rf-on .flatCard .cardFoot .button:is(:hover, :focus-visible),
 html.rf-on .flatCard .cardFoot .button:is(:hover, :focus-visible) :is(span, i, .mdi) { color: var(--rf-green-ink) !important; }
+
+/* Úvod podstránek na mobilu: obrázek je skrytý → odsazení textu od další sekce */
+@media (max-width: 959px) { html.rf-on section.pageTopPanel { padding-bottom: clamp(32px, 8vw, 56px) !important; } }
